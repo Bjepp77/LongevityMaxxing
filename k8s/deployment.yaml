@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: longevitymaxxing-staging
+  namespace: colossus-longevitymaxxing-staging
+  labels:
+    app: longevitymaxxing-staging
+    managed-by: colossus
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: longevitymaxxing-staging
+  template:
+    metadata:
+      labels:
+        app: longevitymaxxing-staging
+    spec:
+      containers:
+        - name: app
+          image: ubuntu:30500/longevitymaxxing-staging:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: app-secrets
+                optional: true
