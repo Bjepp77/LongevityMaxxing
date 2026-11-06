@@ -1,0 +1,12 @@
+{
+  "name": "longevitymaxxing",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LongevityMaxxing: a seven-zone fitness curve tracker. Single-file app served statically.",
+  "scripts": {
+    "start": "serve -s . -l 3000"
+  },
+  "dependencies": {
+    "serve": "^14.2.4"
+  }
+}
