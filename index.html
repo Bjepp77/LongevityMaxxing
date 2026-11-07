@@ -48,7 +48,7 @@ th{color:var(--mut);font-weight:600}
 .day.today{outline:2px solid var(--acc)}
 .day.deload{background:#f8fafc}
 .pill{display:block;border-radius:.3rem;padding:.1rem .3rem;margin:.12rem 0;color:#fff;font-size:.72rem;line-height:1.25}
-.s-strength{background:#334155}.s-vo2{background:#dc2626}.s-z2{background:#0284c7}.s-power{background:#ca8a04}.s-anaerobic{background:#ea580c}.s-lt{background:#9333ea}.s-muscEnd{background:#475569}.s-stability{background:#0d9488}
+.s-strength{background:#334155}.s-vo2{background:#dc2626}.s-z2{background:#0284c7}.s-power{background:#ca8a04}.s-anaerobic{background:#ea580c}.s-lt{background:#9333ea}.s-muscEnd{background:#475569}.s-stability{background:#0d9488}.s-hike{background:#4d7c0f}
 .done{opacity:.55;text-decoration:line-through}
 .note{background:#fffbeb;border:1px solid #fde68a;border-radius:.5rem;padding:.5rem .7rem;font-size:.85rem}
 ul.dose{margin:.3rem 0 .4rem 1.1rem;padding:0}
@@ -72,7 +72,7 @@ footer{max-width:980px;margin:0 auto;padding:0 1rem 2rem;color:var(--mut);font-s
   <a href="#/history" data-r="history">5 · History &amp; data</a>
 </nav>
 <main id="app"></main>
-<footer>Fitness levels here are <em>associated with</em> longer life in observational studies; they are not proven to cause it. Norms: FRIEND registry 2015 (VO2max), Cooper Institute (push-ups, ages 40–49 only), Dodds 2014 (grip), lifter-community bands (strength, not population percentiles). Not medical advice.</footer>
+<footer>Fitness levels here are <em>associated with</em> longer life in observational studies; they are not proven to cause it. Norms: FRIEND registry 2015 (VO2max), Cooper Institute (push-ups, ages 40–49 only), Dodds 2014 (grip), lifter-community bands (strength, not population percentiles), WMA 2023 age factors (60 m, 400 m), USATF 2025 road tables (5K, 10K, half), Naismith (hike, not a norm). Not medical advice.</footer>
 
 <!-- ===================== CORE: pure logic, no DOM (unit-tested in tests/core.test.mjs) ===================== -->
 <script id="lmx-core">
@@ -936,7 +936,7 @@ root.LMX = {
 (function () {
 'use strict';
 var L = window.LMX, $app = document.getElementById('app');
-var KEYS = { profile: 'lmx.profile', assessments: 'lmx.assessments', program: 'lmx.program', log: 'lmx.log', layoff: 'lmx.layoff', settings: 'lmx.settings', importStrong: 'lmx.import.strong', importStrava: 'lmx.import.strava', importMeta: 'lmx.import.meta' };
+var KEYS = { profile: 'lmx.profile', assessments: 'lmx.assessments', program: 'lmx.program', log: 'lmx.log', layoff: 'lmx.layoff', settings: 'lmx.settings', importStrong: 'lmx.import.strong', importStrava: 'lmx.import.strava', importMeta: 'lmx.import.meta', schema: 'lmx.schema' };
 function load(k, dflt) { try { var v = localStorage.getItem(KEYS[k]); return v ? JSON.parse(v) : dflt; } catch (e) { return dflt; } }
 function save(k, v) { localStorage.setItem(KEYS[k], JSON.stringify(v)); }
 function esc(s) { return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -955,6 +955,10 @@ function viewAssess() {
   var t = function (k) { return last[k] ? esc(L.fmtTime(last[k])) : ''; };
   var sel = function (k, val, dflt) { return (last[k] || p[k] || dflt) === val ? ' selected' : ''; };
   var fl = last.flags || {};
+  var hikeKm = last.hike && last.hike.km !== undefined ? last.hike.km : '';
+  var hikeAscent = last.hike && last.hike.ascentM !== undefined ? last.hike.ascentM : '';
+  var hikeLoad = last.hike && last.hike.loadKg !== undefined ? last.hike.loadKg : '';
+  var hikeMoving = last.hike && last.hike.movingS ? L.fmtTime(last.hike.movingS) : '';
   $app.innerHTML =
   '<form id="f-assess">' +
   '<div class="card"><h2>You</h2><div class="grid">' +
@@ -966,20 +970,35 @@ function viewAssess() {
   '</div></div>' +
   '<div class="card"><h2>Field tests (enter any you have done)</h2><p class="mut">Times as m:ss (e.g. 7:12) or h:mm:ss. Use the same test each time — results from different tests are not compared.</p><div class="grid">' +
     '<div><label for="jumpCm">1 · Standing broad jump, best of 3 (cm)</label><input id="jumpCm" name="jumpCm" type="number" min="30" max="400" value="' + v('jumpCm') + '"></div>' +
-    '<div><label for="lift">2 · Strength lift</label><select id="lift" name="lift"><option value="trapbar"' + sel('lift', 'trapbar', 'trapbar') + '>Trap-bar deadlift</option><option value="squat"' + sel('lift', 'squat', 'trapbar') + '>Back squat</option></select></div>' +
-    '<div><label for="liftKg">2 · Load for the 5-rep set (kg)</label><input id="liftKg" name="liftKg" type="number" step="0.5" min="5" max="500" value="' + v('liftKg') + '"></div>' +
-    '<div><label for="liftReps">2 · Reps done at that load (≤ 10)</label><input id="liftReps" name="liftReps" type="number" min="1" max="10" value="' + v('liftReps', 5) + '"></div>' +
-    '<div><label for="hangS">2b · Dead hang (seconds)</label><input id="hangS" name="hangS" type="number" min="0" max="900" value="' + v('hangS') + '"></div>' +
-    '<div><label for="gripKg">2b · Grip dynamometer, best hand (kg, optional)</label><input id="gripKg" name="gripKg" type="number" step="0.5" min="0" max="150" value="' + v('gripKg') + '"></div>' +
+    '<div><label for="sprintS">2 · 60 m from a standing start, best of 2 (s)</label><input id="sprintS" name="sprintS" type="number" step="0.01" min="4" max="30" value="' + v('sprintS') + '"></div>' +
+    '<div><label for="sprintTiming">2 · Sprint timing method</label><select id="sprintTiming" name="sprintTiming"><option value="video"' + sel('sprintTiming', 'video', 'video') + '>Phone slow-motion video (&#177;3%)</option><option value="hand"' + sel('sprintTiming', 'hand', 'video') + '>Hand stopwatch (&#177;0.2 s, &#177;5%)</option></select></div>' +
+    '<div class="mut" style="grid-column:1/-1;font-size:.8rem">Sprint help: film from the finish line on a tripod; time first movement to torso crossing.</div>' +
     '<div><label for="anaMode">3 · Anaerobic test</label><select id="anaMode" name="anaMode"><option value="run400"' + sel('anaMode', 'run400', 'run400') + '>400 m run, all-out</option><option value="row500"' + sel('anaMode', 'row500', 'run400') + '>500 m row, all-out</option></select></div>' +
     '<div><label for="anaS">3 · Time (m:ss)</label><input id="anaS" name="anaS" placeholder="1:15" value="' + t('anaS') + '"></div>' +
-    '<div><label for="pushups">4 · Push-ups to failure (reps)</label><input id="pushups" name="pushups" type="number" min="0" max="300" value="' + v('pushups') + '"></div>' +
-    '<div><label for="vo2Mode">5 · VO2max test</label><select id="vo2Mode" name="vo2Mode"><option value="row2k"' + sel('vo2Mode', 'row2k', 'row2k') + '>2K row (Concept2)</option><option value="cooper12"' + sel('vo2Mode', 'cooper12', 'row2k') + '>12-min run (Cooper)</option></select></div>' +
-    '<div id="w-row2k"><label for="row2kS">5 · 2K row time (m:ss)</label><input id="row2kS" name="row2kS" placeholder="7:30" value="' + t('row2kS') + '"></div>' +
-    '<div id="w-cooper"><label for="cooperM">5 · Distance in 12 min (m)</label><input id="cooperM" name="cooperM" type="number" min="500" max="5000" value="' + v('cooperM') + '"></div>' +
-    '<div><label for="fiveKS">6 · 5K time trial (m:ss)</label><input id="fiveKS" name="fiveKS" placeholder="24:30" value="' + t('fiveKS') + '"></div>' +
-    '<div><label for="z2Min">7 · Zone-2 minutes in a typical week</label><input id="z2Min" name="z2Min" type="number" min="0" max="2000" value="' + v('z2Min') + '"></div>' +
-    '<div><label for="longPace">7 · Long-effort pace at talk-test effort (optional, e.g. 6:30 /km)</label><input id="longPace" name="longPace" value="' + v('longPace') + '"></div>' +
+    '<div><label for="vo2Mode">4 · VO2max test</label><select id="vo2Mode" name="vo2Mode"><option value="row2k"' + sel('vo2Mode', 'row2k', 'row2k') + '>2K row (Concept2)</option><option value="cooper12"' + sel('vo2Mode', 'cooper12', 'row2k') + '>12-min run (Cooper)</option></select></div>' +
+    '<div id="w-row2k"><label for="row2kS">4 · 2K row time (m:ss)</label><input id="row2kS" name="row2kS" placeholder="7:30" value="' + t('row2kS') + '"></div>' +
+    '<div id="w-cooper"><label for="cooperM">4 · Distance in 12 min (m)</label><input id="cooperM" name="cooperM" type="number" min="500" max="5000" value="' + v('cooperM') + '"></div>' +
+    '<div><label for="fiveKS">5 · 5K time trial (m:ss)</label><input id="fiveKS" name="fiveKS" placeholder="24:30" value="' + t('fiveKS') + '"></div>' +
+    '<div><label for="aerMode">6 · 60-min aerobic test</label><select id="aerMode" name="aerMode"><option value="10k"' + sel('aerMode', '10k', '10k') + '>10K time</option><option value="half"' + sel('aerMode', 'half', '10k') + '>Half marathon time</option><option value="60min"' + sel('aerMode', '60min', '10k') + '>Distance in a hard 60-min run</option></select></div>' +
+    '<div id="w-aerS"><label for="aerS">6 · Time (m:ss or h:mm:ss)</label><input id="aerS" name="aerS" placeholder="50:00" value="' + (last.aerS ? esc(L.fmtTime(last.aerS)) : '') + '"></div>' +
+    '<div id="w-aerM"><label for="aerM">6 · Distance in 60 min (metres)</label><input id="aerM" name="aerM" type="number" min="1000" max="20000" value="' + v('aerM') + '"></div>' +
+    '<div><label for="hikeKm">7 · Hike — distance (km)</label><input id="hikeKm" name="hikeKm" type="number" step="0.1" min="0" max="200" value="' + esc(hikeKm) + '"></div>' +
+    '<div><label for="hikeAscent">7 · Hike — ascent (m)</label><input id="hikeAscent" name="hikeAscent" type="number" min="0" max="10000" value="' + esc(hikeAscent) + '"></div>' +
+    '<div><label for="hikeLoad">7 · Hike — pack (kg)</label><input id="hikeLoad" name="hikeLoad" type="number" step="0.5" min="0" max="50" value="' + esc(hikeLoad) + '"></div>' +
+    '<div><label for="hikeMoving">7 · Hike — moving time (h:mm:ss)</label><input id="hikeMoving" name="hikeMoving" placeholder="3:00:00" value="' + esc(hikeMoving) + '"></div>' +
+    '<div class="mut" style="grid-column:1/-1;font-size:.8rem">At least 2 h moving and 300 m ascent or a 10 kg pack. Observed effort, no published norms.</div>' +
+  '</div></div>' +
+  '<div class="card"><h2>Strength pillar</h2><p class="mut">These feed the Strength pillar score, not individual curve zones.</p><div class="grid">' +
+    '<div><label for="lift">Strength lift</label><select id="lift" name="lift"><option value="trapbar"' + sel('lift', 'trapbar', 'trapbar') + '>Trap-bar deadlift</option><option value="squat"' + sel('lift', 'squat', 'trapbar') + '>Back squat</option></select></div>' +
+    '<div><label for="liftKg">Load for the 5-rep set (kg)</label><input id="liftKg" name="liftKg" type="number" step="0.5" min="5" max="500" value="' + v('liftKg') + '"></div>' +
+    '<div><label for="liftReps">Reps done at that load (&#8804; 10)</label><input id="liftReps" name="liftReps" type="number" min="1" max="10" value="' + v('liftReps', 5) + '"></div>' +
+    '<div><label for="hangS">Dead hang (seconds)</label><input id="hangS" name="hangS" type="number" min="0" max="900" value="' + v('hangS') + '"></div>' +
+    '<div><label for="gripKg">Grip dynamometer, best hand (kg, optional)</label><input id="gripKg" name="gripKg" type="number" step="0.5" min="0" max="150" value="' + v('gripKg') + '"></div>' +
+    '<div><label for="pushups">Push-ups to failure (reps)</label><input id="pushups" name="pushups" type="number" min="0" max="300" value="' + v('pushups') + '"></div>' +
+  '</div></div>' +
+  '<div class="card"><h2>Habit</h2><div class="grid">' +
+    '<div><label for="z2Min">Zone-2 minutes in a typical week</label><input id="z2Min" name="z2Min" type="number" min="0" max="2000" value="' + v('z2Min') + '"></div>' +
+    '<div><label for="longPace">Long-effort pace at talk-test effort (optional, e.g. 6:30 /km)</label><input id="longPace" name="longPace" value="' + v('longPace') + '"></div>' +
   '</div></div>' +
   '<div class="card"><h2>Test conditions</h2><p class="mut">Logged so a bad night or a hot day is not mistaken for lost fitness.</p><div class="row">' +
     '<label class="chk"><input type="checkbox" name="fSleep"' + (fl.sleep ? ' checked' : '') + '> Slept &lt; 6 h</label>' +
@@ -996,33 +1015,46 @@ function viewAssess() {
   var mode = document.getElementById('vo2Mode');
   function toggle() { document.getElementById('w-row2k').classList.toggle('hide', mode.value !== 'row2k'); document.getElementById('w-cooper').classList.toggle('hide', mode.value !== 'cooper12'); }
   mode.addEventListener('change', toggle); toggle();
+  var aerModeEl = document.getElementById('aerMode');
+  function toggleAer() { var is60 = aerModeEl.value === '60min'; document.getElementById('w-aerS').classList.toggle('hide', is60); document.getElementById('w-aerM').classList.toggle('hide', !is60); }
+  aerModeEl.addEventListener('change', toggleAer); toggleAer();
   document.getElementById('f-assess').addEventListener('submit', function (ev) {
     ev.preventDefault();
     var fd = new FormData(ev.target), g = function (k) { return fd.get(k); }, n = function (k) { var x = g(k); return x === '' || x === null ? null : Number(x); };
+    var hikeKmV = n('hikeKm'), hikeMovingV = g('hikeMoving') ? L.parseTime(g('hikeMoving')) : null;
     var a = {
       date: g('date'), savedAt: new Date().toISOString(), age: n('age'), sex: g('sex'), bw: n('bw'), level: g('level'),
-      jumpCm: n('jumpCm'), lift: g('lift'), liftKg: n('liftKg'), liftReps: n('liftReps'), hangS: n('hangS'), gripKg: n('gripKg'),
-      anaMode: g('anaMode'), anaS: L.parseTime(g('anaS')), pushups: n('pushups'), vo2Mode: g('vo2Mode'),
+      jumpCm: n('jumpCm'),
+      sprintS: n('sprintS'), sprintTiming: g('sprintTiming'),
+      anaMode: g('anaMode'), anaS: L.parseTime(g('anaS')),
+      lift: g('lift'), liftKg: n('liftKg'), liftReps: n('liftReps'), hangS: n('hangS'), gripKg: n('gripKg'),
+      pushups: n('pushups'), vo2Mode: g('vo2Mode'),
       row2kS: g('vo2Mode') === 'row2k' ? L.parseTime(g('row2kS')) : null, cooperM: g('vo2Mode') === 'cooper12' ? n('cooperM') : null,
-      fiveKS: L.parseTime(g('fiveKS')), z2Min: n('z2Min'), longPace: g('longPace') || '',
+      fiveKS: L.parseTime(g('fiveKS')),
+      aerMode: g('aerMode'),
+      aerS: g('aerMode') !== '60min' ? L.parseTime(g('aerS')) : null,
+      aerM: g('aerMode') === '60min' ? n('aerM') : null,
+      hike: (hikeKmV && hikeMovingV) ? { km: hikeKmV, ascentM: n('hikeAscent') || 0, loadKg: n('hikeLoad') || 0, movingS: hikeMovingV } : null,
+      z2Min: n('z2Min'), longPace: g('longPace') || '',
       flags: { sleep: !!g('fSleep'), caffeine: !!g('fCaffeine'), heat: !!g('fHeat'), tod: g('fTod') },
       sls: { open: !!g('slsOpen'), closed: !!g('slsClosed') }
     };
     var errs = [];
-    /* filled-but-invalid time fields */
     var anaRaw = g('anaS'), fiveRaw = g('fiveKS'), row2kRaw = g('row2kS');
+    var aerRaw = g('aerMode') !== '60min' ? g('aerS') : null;
+    var hikeMovingRaw = g('hikeMoving');
     if (anaRaw && !a.anaS) errs.push('Anaerobic time must look like 1:15.');
     if (fiveRaw && !a.fiveKS) errs.push('5K time must look like 24:30.');
     if (a.vo2Mode === 'row2k' && row2kRaw && !a.row2kS) errs.push('2K row time must look like 7:30.');
     if (a.vo2Mode === 'cooper12' && g('cooperM') && !a.cooperM) errs.push('Enter a valid distance (metres).');
-    /* at least one test value */
-    var hasTest = a.jumpCm || a.liftKg || a.hangS || a.gripKg || a.anaS || (a.pushups !== null && a.pushups !== undefined) || a.row2kS || a.cooperM || a.fiveKS || (a.z2Min !== null && a.z2Min !== undefined);
+    if (aerRaw && !a.aerS) errs.push('Aerobic time must look like 50:00 or 1:40:00.');
+    if (hikeMovingRaw && !hikeMovingV) errs.push('Hike moving time must look like 3:00:00.');
+    var hasTest = a.jumpCm || a.sprintS || a.anaS || a.liftKg || a.hangS || a.gripKg || (a.pushups !== null && a.pushups !== undefined) || a.row2kS || a.cooperM || a.fiveKS || a.aerS || a.aerM || a.hike || (a.z2Min !== null && a.z2Min !== undefined);
     if (!hasTest) errs.push('Enter at least one test.');
     var box = document.getElementById('err');
     if (errs.length) { box.textContent = errs.join(' '); box.classList.remove('hide'); return; }
     save('profile', { age: a.age, sex: a.sex, bw: a.bw, level: a.level });
     var all = load('assessments', []); all.push(a); save('assessments', all);
-    /* mark first real test after import */
     var impMeta = load('importMeta', null);
     if (impMeta && impMeta.used && !impMeta.firstRealTestAfterImport) {
       impMeta.firstRealTestAfterImport = { date: a.date, savedAt: a.savedAt };
@@ -1075,10 +1107,10 @@ function viewImport() {
 
     html += '<div class="card"><h2>Placements (provisional)</h2>';
     html += curveSvg({}, null, null, est);
-    ['z6', 'z7', 'z5'].forEach(function (z) {
+    ['thr', 'aer', 'vo2'].forEach(function (z) {
       var zone = null; for (var i = 0; i < L.ZONES.length; i++) { if (L.ZONES[i].id === z) { zone = L.ZONES[i]; break; } }
       var pData = P[z];
-      html += '<div class="proxy-card' + (real[z] ? ' replaced' : '') + '" data-zone="' + z + '"><strong>' + esc(zone.name) + '</strong> ';
+      html += '<div class="proxy-card' + (real[z] ? ' replaced' : '') + '" data-zone="' + z + '"><strong>' + esc(zone ? zone.name : z) + '</strong> ';
       if (real[z]) {
         html += '<span>Replaced by your real test</span>';
       } else if (pData && pData.ok) {
@@ -1097,7 +1129,7 @@ function viewImport() {
     var wp = L.weakestProxy(A);
     if (wp) {
       var wpZone = null; for (var i = 0; i < L.ZONES.length; i++) { if (L.ZONES[i].id === wp) { wpZone = L.ZONES[i]; break; } }
-      html += '<div id="weakest-proxy" class="card"><strong>Weakest estimate: ' + esc(wpZone.name) + '.</strong> A real ' + esc(wpZone.test) + ' would confirm it.</div>';
+      html += '<div id="weakest-proxy" class="card"><strong>Weakest estimate: ' + esc(L.zoneName(wp)) + '.</strong> A real ' + esc(wpZone ? wpZone.test : wp) + ' would confirm it.</div>';
     }
   }
 
@@ -1108,14 +1140,17 @@ function viewImport() {
     html += '<div class="card"><h2>What to test</h2><ol id="must-test">';
     order.forEach(function (zid) {
       var zone = null; for (var i = 0; i < L.ZONES.length; i++) { if (L.ZONES[i].id === zid) { zone = L.ZONES[i]; break; } }
-      var extra = '';
-      if (zid === 'z2' && strongRaw && strongRaw.lifts) {
-        var tbLift = strongRaw.lifts['trapbar'] || strongRaw.lifts['squat'];
-        if (tbLift && tbLift.e1rm) extra = ' Your log suggests est. 1RM ' + Math.round(tbLift.e1rm) + ' kg.';
-      }
-      html += '<li data-zone="' + zid + '">Not estimable from a log: test this — ' + esc(zone.name) + ' (' + esc(zone.test) + ').' + extra + '</li>';
+      html += '<li data-zone="' + zid + '">Not estimable from a log: test this &#8212; ' + esc(L.zoneName(zid)) + (zone ? ' (' + esc(zone.test) + ')' : '') + '.</li>';
     });
-    html += '</ol></div>';
+    html += '</ol>';
+    /* est. 1RM hint as separate line (Strength pillar is not a curve zone) */
+    if (strongRaw && strongRaw.lifts) {
+      var tbLift = strongRaw.lifts['trapbar'] || strongRaw.lifts['squat'];
+      if (tbLift && tbLift.e1rm) {
+        html += '<p class="mut">Your log suggests est. 1RM ' + Math.round(tbLift.e1rm) + ' kg &#8212; log a 5-rep test in the Strength pillar.</p>';
+      }
+    }
+    html += '</div>';
   }
 
   /* 8. strength pillar (when strong import exists) */
@@ -1223,20 +1258,38 @@ function viewImport() {
 function curveSvg(cur, tgt, prev, est) {
   var W = 720, H = 300, pl = 44, pr = 48, pt = 16, pb = 58, iw = W - pl - pr, ih = H - pt - pb;
   var x = function (i) { return pl + iw * i / 6; }, y = function (s) { return pt + ih * (1 - s / 100); };
-  function pts(obj) { return L.ZONES.map(function (z, i) { var s = obj[z.id]; return s === null || s === undefined ? null : [x(i), y(s)]; }); }
+  /* points excluding hike (observed only) for the scored line, area and regular dots */
+  function ptsNoHike(obj) {
+    return L.ZONES.map(function (z, i) {
+      if (z.id === 'hike') return null;
+      var s = obj[z.id]; return s === null || s === undefined ? null : [x(i), y(s)];
+    });
+  }
   function line(pp) { var d = '', pen = false; pp.forEach(function (p) { if (!p) { pen = false; return; } d += (pen ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ' '; pen = true; }); return d; }
-  var c = pts(cur), g = '';
+  var c = ptsNoHike(cur), g = '';
   [0, 25, 50, 75, 100].forEach(function (s) { g += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y(s) + '" y2="' + y(s) + '" stroke="#e5e7eb"/><text x="' + (pl - 6) + '" y="' + (y(s) + 4) + '" font-size="11" text-anchor="end" fill="#6b7280">' + s + '</text>'; });
   var cc = c.filter(Boolean), area = cc.length > 1 ? 'M' + cc[0][0] + ' ' + y(0) + ' ' + cc.map(function (p) { return 'L' + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ') + ' L' + cc[cc.length - 1][0] + ' ' + y(0) + ' Z' : '';
   var labels = L.ZONES.map(function (z, i) { return '<text x="' + x(i) + '" y="' + (H - pb + 18) + '" font-size="11.5" text-anchor="middle" fill="#111827">' + esc(z.short) + '</text><text x="' + x(i) + '" y="' + (H - pb + 32) + '" font-size="10" text-anchor="middle" fill="#6b7280">zone ' + z.n + '</text>'; }).join('');
-  var dots = c.map(function (p, i) { return p ? '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4.5" fill="#0f766e"/><text x="' + p[0] + '" y="' + (p[1] - 9) + '" font-size="11" text-anchor="middle" fill="#0f766e" font-weight="700">' + Math.round(cur[L.ZONES[i].id]) + '</text>' : ''; }).join('');
-  /* proxy dots: hollow circles for zones with an estimate but no real score */
+  var dots = c.map(function (p, i) {
+    if (!p) return '';
+    var zid = L.ZONES[i].id;
+    return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4.5" fill="#0f766e"/><text x="' + p[0] + '" y="' + (p[1] - 9) + '" font-size="11" text-anchor="middle" fill="#0f766e" font-weight="700">' + Math.round(cur[zid]) + '</text>';
+  }).join('');
+  /* hike observed dot: hollow, dashed stroke, with ~score label; never joined to the main line */
+  var hikeIdx = 6;
+  var hikeSvg = '', hikeScore = cur && cur.hike !== null && cur.hike !== undefined ? cur.hike : null;
+  if (hikeScore !== null) {
+    var hx = x(hikeIdx), hy = y(hikeScore);
+    hikeSvg = '<circle class="observed-dot" cx="' + hx.toFixed(1) + '" cy="' + hy.toFixed(1) + '" r="5" fill="#fff" stroke="#64748b" stroke-dasharray="3 2"/>';
+    hikeSvg += '<text x="' + hx.toFixed(1) + '" y="' + (hy - 9).toFixed(1) + '" font-size="11" text-anchor="middle" fill="#64748b">~' + Math.round(hikeScore) + '</text>';
+  }
+  /* proxy dots: hollow circles for zones with an estimate but no real score (vo2/thr/aer) */
   var proxyDots = '';
   if (est) {
     Object.keys(est).forEach(function (z) {
       var pct = est[z];
       if (pct === null || pct === undefined) return;
-      var zobj = cur[z]; if (zobj !== null && zobj !== undefined) return; /* real score exists */
+      var zobj = cur[z]; if (zobj !== null && zobj !== undefined) return;
       var idx = -1; for (var i = 0; i < L.ZONES.length; i++) { if (L.ZONES[i].id === z) { idx = i; break; } }
       if (idx < 0) return;
       var cx = x(idx), cy = y(pct);
@@ -1247,11 +1300,11 @@ function curveSvg(cur, tgt, prev, est) {
   var hasEst = est && Object.keys(est).some(function (z) { return est[z] !== null && est[z] !== undefined; });
   return '<svg id="curve-svg" viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Seven-zone fitness curve">' + g +
     (area ? '<path d="' + area + '" fill="#14b8a6" fill-opacity=".14"/>' : '') +
-    (prev ? '<path d="' + line(pts(prev)) + '" fill="none" stroke="#94a3b8" stroke-width="1.5"/>' : '') +
-    (tgt ? '<path id="target-line" d="' + line(pts(tgt)) + '" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="5 5"/>' : '') +
-    '<path d="' + line(c) + '" fill="none" stroke="#0f766e" stroke-width="2.5"/>' + dots + proxyDots + labels +
-    '<text x="' + (W - pr) + '" y="' + (H - 6) + '" font-size="10.5" text-anchor="end" fill="#6b7280">short &amp; hard → long &amp; easy</text></svg>' +
-    '<div class="row mut" style="font-size:.8rem"><span style="color:#0f766e">━ now</span><span style="color:#7c3aed">┅ block target</span>' + (prev ? '<span style="color:#94a3b8">━ previous test</span>' : '') + (hasEst ? '<span style="color:#0f766e">◌ estimated from your log (provisional)</span>' : '') + '</div>';
+    (prev ? '<path d="' + line(ptsNoHike(prev)) + '" fill="none" stroke="#94a3b8" stroke-width="1.5"/>' : '') +
+    (tgt ? '<path id="target-line" d="' + line(ptsNoHike(tgt)) + '" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="5 5"/>' : '') +
+    '<path d="' + line(c) + '" fill="none" stroke="#0f766e" stroke-width="2.5"/>' + dots + hikeSvg + proxyDots + labels +
+    '<text x="' + (W - pr) + '" y="' + (H - 6) + '" font-size="10.5" text-anchor="end" fill="#6b7280">short &amp; hard &#x2192; long &amp; easy</text></svg>' +
+    '<div class="row mut" style="font-size:.8rem"><span style="color:#0f766e">&#9473; now</span><span style="color:#7c3aed">&#x2505; block target</span>' + (prev ? '<span style="color:#94a3b8">&#9473; previous test</span>' : '') + (hasEst ? '<span style="color:#0f766e">&#9675; estimated from your log (provisional)</span>' : '') + (hikeScore !== null ? '<span style="color:#64748b">&#9675; observed (hike, not scored)</span>' : '') + '</div>';
 }
 
 /* ---------------- Curve & targets ---------------- */
@@ -1262,7 +1315,7 @@ function viewCurve() {
     if (anyImport) {
       $app.innerHTML = '<div class="card"><h2>No real tests yet</h2><p>Block targets come only from real tests. <a href="#/import">View your import and placements.</a></p></div>';
     } else {
-      $app.innerHTML = '<div class="card"><h2>No tests yet</h2><p>Enter your seven field tests first.</p><a href="#/assess"><button>Enter tests</button></a></div>';
+      $app.innerHTML = '<div class="card"><h2>No tests yet</h2><p>Enter your field tests first.</p><a href="#/assess"><button>Enter tests</button></a></div>';
     }
     return;
   }
@@ -1271,13 +1324,15 @@ function viewCurve() {
   var prevScores = null;
   if (h.length > 1) { var ps = L.scoreHistory(h.slice(0, -1)); prevScores = {}; L.ZONES.forEach(function (z) { prevScores[z.id] = ps.zones[z.id].score; }); }
   var cur = {}; L.ZONES.forEach(function (z) { cur[z.id] = sc.zones[z.id].score; });
-  var a = sc.assessment, weakNames = sc.weakest.map(function (id) { return L.ZONES.filter(function (z) { return z.id === id; })[0].name; });
+  var a = sc.assessment;
+  var weakNames = sc.weakest.map(function (id) { return L.zoneName(id); });
   var det = tg.detraining;
   /* proxy info (purely display; never feeds targets) */
   var stravaRaw = load('importStrava', null);
   var PA = stravaRaw ? L.activeProxies(L.proxyEstimates(stravaRaw, { age: a.age, sex: a.sex }, today()), h) : {};
   var est = {};
   Object.keys(PA).forEach(function (z) { if (PA[z].pct !== null && PA[z].pct !== undefined) est[z] = PA[z].pct; });
+  /* zone cards for all 7 ZONES */
   var zoneCards = L.ZONES.map(function (z) {
     var r = sc.zones[z.id], weak = sc.weakest.indexOf(z.id) >= 0;
     var ch = r.changes.filter(function (c) { return c[1]; }).map(function (c) { return L.METRICS[c[0]].label + ': ' + chgText(c[1]); }).join(' · ');
@@ -1287,23 +1342,37 @@ function viewCurve() {
       proxyHtml = '<div class="proxy-label">' + esc(pInfo.label) + '</div>';
       if (pInfo.pct !== null && pInfo.pct !== undefined) proxyHtml += '<div class="mut">' + esc(pInfo.text) + ' P' + Math.round(pInfo.pct) + '</div>';
     }
-    return '<div class="zcard' + (weak ? ' weak' : '') + '" data-zone="' + z.id + '"><div class="row" style="justify-content:space-between"><strong>' + z.n + ' · ' + esc(z.name) + '</strong>' + tierBadge(z.tier) + (z.id === 'z2' ? ' ' + tierBadge('strong') + '<span class="mut" style="font-size:.7rem">grip</span>' : '') + '</div>' +
-      '<div class="row"><span class="score">' + f1(r.score) + '</span><span class="mut">/ 100 · ' + esc(z.basis) + (weak ? ' · <b style="color:#b45309">weakest</b>' : '') + '</span></div>' +
-      '<div class="mut">' + esc(r.detail || 'not tested') + '</div>' + (ch ? '<div style="font-size:.82rem">' + ch + '</div>' : '') + proxyHtml + '</div>';
+    var scoreExtra = '';
+    if (r.score !== null && r.score !== undefined) {
+      if ((z.id === 'sprint' || z.id === 'aer') && r.label) scoreExtra += ' <span class="age-grade-label">' + esc(r.label) + '</span>';
+      if ((z.id === 'ana' || z.id === 'thr') && r.secondary) scoreExtra += ' <span class="mut">&#183; ' + esc(r.secondary) + '</span>';
+      if (z.id === 'aer' && r.converted) scoreExtra += ' <span class="mut">(converted)</span>';
+    }
+    var observedHtml = z.id === 'hike' ? '<div><span class="observed-label">' + esc(z.basis) + '</span></div>' : '';
+    return '<div class="zcard' + (weak ? ' weak' : '') + '" data-zone="' + z.id + '"><div class="row" style="justify-content:space-between"><strong>' + esc(z.name) + '</strong>' + tierBadge(z.tier) + '</div>' +
+      '<div class="row"><span class="score">' + f1(r.score) + '</span>' + scoreExtra + (weak ? '<span class="mut"> &#183; <b style="color:#b45309">weakest</b></span>' : '') + '</div>' +
+      '<div class="mut">' + esc(r.detail || 'not tested') + '</div>' + observedHtml + (ch ? '<div style="font-size:.82rem">' + ch + '</div>' : '') + proxyHtml + '</div>';
   }).join('');
+  /* Strength pillar card */
+  var pil = sc.pillar, pilWeak = sc.weakest.indexOf('pillar') >= 0;
+  var pilCh = (pil.changes || []).filter(function (c) { return c[1]; }).map(function (c) { return L.METRICS[c[0]].label + ': ' + chgText(c[1]); }).join(' · ');
+  var pillarCard = '<div class="zcard' + (pilWeak ? ' weak' : '') + '" data-zone="pillar"><div class="row" style="justify-content:space-between"><strong>' + esc(L.PILLAR.name) + '</strong>' + tierBadge(L.PILLAR.tier) + '</div>' +
+    '<div class="row"><span class="score">' + f1(pil.score) + '</span>' + (pilWeak ? '<span class="mut"> &#183; <b style="color:#b45309">weakest</b></span>' : '') + '</div>' +
+    '<div class="mut">' + esc(pil.detail || 'not tested') + '</div>' +
+    (pilCh ? '<div style="font-size:.82rem">' + pilCh + '</div>' : '') + '</div>';
   var rows = tg.items.map(function (t) {
-    var tgtCell = t.shown ? '<b>' + esc(t.fmt(t.target)) + '</b> ' + esc(t.unit) : '<span class="mut">↑ trend only — expected change is inside test noise</span>';
-    return '<tr data-metric="' + t.metric + '"><td>' + esc(L.ZONES.filter(function (z) { return z.id === t.zone; })[0].short) + '</td><td>' + esc(t.label) + '</td><td>' + esc(t.fmt(t.current)) + ' ' + esc(t.unit) + '</td><td>' + tgtCell + '</td><td class="mut">' + esc(t.why) + '</td></tr>';
+    var tgtCell = t.shown ? '<b>' + esc(t.fmt(t.target)) + '</b> ' + esc(t.unit) : '<span class="mut">&#8593; trend only &#8212; expected change is inside test noise</span>';
+    return '<tr data-metric="' + t.metric + '"><td>' + esc(L.zoneShort(t.zone)) + '</td><td>' + esc(t.label) + '</td><td>' + esc(t.fmt(t.current)) + ' ' + esc(t.unit) + '</td><td>' + tgtCell + '</td><td class="mut">' + esc(t.why) + '</td></tr>';
   }).join('');
   $app.innerHTML =
-    '<div class="card"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h2>Your fitness curve</h2><div class="mut">Test of ' + esc(nice(a.date)) + ' · age ' + a.age + ' · ' + (a.sex === 'F' ? 'female' : 'male') + ' · ' + a.bw + ' kg</div></div>' +
-      '<div style="text-align:right"><div class="mut">Composite (area under the curve)</div><div class="big" id="composite">' + f1(sc.composite) + '</div><div class="mut" style="font-size:.75rem">evidence-weighted: VO2max ×3, strength ×2, grip ×2, others ×1</div></div></div>' +
+    '<div class="card"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h2>Your fitness curve</h2><div class="mut">Test of ' + esc(nice(a.date)) + ' &#183; age ' + a.age + ' &#183; ' + (a.sex === 'F' ? 'female' : 'male') + ' &#183; ' + a.bw + ' kg</div></div>' +
+      '<div style="text-align:right"><div class="mut">Composite (area under the curve)</div><div class="big" id="composite">' + f1(sc.composite) + '</div><div class="mut" style="font-size:.75rem">evidence-weighted: VO2max &#215;3, Strength pillar &#215;2, other zones &#215;1; the hike is observed only and not counted</div></div></div>' +
       curveSvg(cur, tc, prevScores, est) +
-      '<p id="weakest"><b>Weakest zones:</b> ' + esc(weakNames.join(' and ')) + ' — the program adds one extra session for each.</p>' +
-      (sc.flagsDiffer ? '<div class="note">Test conditions (sleep, caffeine, heat or time of day) differed from your previous test — treat changes with care.</div>' : '') +
-      (det.days ? '<div class="note">Layoff of ' + det.days + ' days applied to your baselines: VO2max −' + (det.vo2Loss * 100).toFixed(1) + '%, strength −' + (det.strengthLoss * 100).toFixed(1) + '%. Regaining usually takes about half the layoff time.</div>' : '') +
+      '<p id="weakest"><b>Weakest zones:</b> ' + esc(weakNames.join(' and ')) + ' &#8212; the program adds one extra session for each.</p>' +
+      (sc.flagsDiffer ? '<div class="note">Test conditions (sleep, caffeine, heat or time of day) differed from your previous test &#8212; treat changes with care.</div>' : '') +
+      (det.days ? '<div class="note">Layoff of ' + det.days + ' days applied to your baselines: VO2max &#8722;' + (det.vo2Loss * 100).toFixed(1) + '%, strength &#8722;' + (det.strengthLoss * 100).toFixed(1) + '%. Regaining usually takes about half the layoff time.</div>' : '') +
     '</div>' +
-    '<div class="card"><h2>Zones</h2><div class="grid">' + zoneCards + '</div><p class="mut" style="margin-top:.6rem">Scores: percentile where published norms exist (VO2max, push-ups), band position for strength and grip, and own-baseline progress elsewhere (first test = 50, +10 for each improvement bigger than the test\'s noise).</p></div>' +
+    '<div class="card"><h2>Zones</h2><div class="grid">' + zoneCards + pillarCard + '</div><p class="mut" style="margin-top:.6rem">Scores: percentile where published norms exist (VO2max, push-ups), age-graded % for sprint/aer/ana/thr (not percentiles), band position for strength and grip, own-baseline for power and hike (first test = 50, +10 per confirmed improvement).</p></div>' +
     '<div class="card"><div class="row" style="justify-content:space-between"><h2>Block targets</h2><label class="chk">Block length <select id="blockWeeks" style="width:auto"><option value="8"' + (weeks === 8 ? ' selected' : '') + '>8 weeks</option><option value="12"' + (weeks === 12 ? ' selected' : '') + '>12 weeks</option></select></label></div>' +
       '<p class="mut">A number is shown only when the expected change is bigger than the test\'s noise; otherwise you get a trend arrow and the per-session dose walks you toward it.</p>' +
       '<table id="targets"><thead><tr><th>Zone</th><th>Test</th><th>Now</th><th>Target in ' + weeks + ' wk</th><th>Basis</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
@@ -1321,7 +1390,8 @@ function viewProgram() {
   if (!p) { $app.innerHTML = '<div class="card"><h2>No program yet</h2><p>Score your curve, then generate a program.</p><a href="#/curve"><button>Go to my curve</button></a></div>'; return; }
   var t = today(), log = load('log', []), done = {};
   log.forEach(function (l) { if (l.done) done[l.date + '|' + l.sessionId] = true; });
-  var weakNames = p.weakest.map(function (id) { return L.ZONES.filter(function (z) { return z.id === id; })[0].short; }).join(' + ');
+  var weakNames = p.weakest.map(function (id) { return L.zoneShort(id); }).join(' + ');
+  var staleNote = p.stale ? '<div class="note" id="program-stale">Built on the old curve &#8212; regenerate it from your curve. <a href="#/curve">Go to curve</a></div>' : '';
   var weeksHtml = p.weeks.map(function (w) {
     return '<div style="margin:.6rem 0"><div class="row"><strong>Week ' + w.n + '</strong><span class="mut">Block ' + w.block + ' · week ' + w.inBlock + (w.deload ? ' · <b>deload (−40% volume)</b>' : '') + '</span></div><div class="wk">' +
       w.days.map(function (d) {
@@ -1330,7 +1400,7 @@ function viewProgram() {
           (d.sessions.length === 1 ? '<span class="mut">Rest + stability</span>' : '') + '</a>';
       }).join('') + '</div></div>';
   }).join('');
-  $app.innerHTML = '<div class="card"><h2>12-week program</h2><p class="mut">Starts ' + esc(nice(p.start)) + ' · built from the test of ' + esc(nice(p.assessmentDate)) + ' · extra sessions for ' + esc(weakNames) + '. Three 4-week blocks; week 4 of each is a deload. 10 minutes of stability work every day. Tap a day for its doses.</p>' + weeksHtml + '</div>';
+  $app.innerHTML = staleNote + '<div class="card"><h2>12-week program</h2><p class="mut">Starts ' + esc(nice(p.start)) + ' &#183; built from the test of ' + esc(nice(p.assessmentDate)) + ' &#183; extra sessions for ' + esc(weakNames) + '. Three 4-week blocks; week 4 of each is a deload. 10 minutes of stability work every day. Tap a day for its doses.</p>' + weeksHtml + '</div>';
 }
 
 /* ---------------- Today (dose + logger) ---------------- */
@@ -1373,14 +1443,17 @@ function viewToday(dateArg) {
 /* ---------------- History & data ---------------- */
 function viewHistory() {
   var h = history(), log = load('log', []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; }), lay = load('layoff', {}) || {};
+  var st = load('settings', {});
+  var rescoredNote = st.migratedAt ? '<p class="mut" id="rescored-note">All tests are scored on the v2.1 curve (since ' + esc(st.migratedAt.slice(0, 10)) + '). Composites from before the change were computed differently and are not compared.</p>' : '';
   var rows = h.map(function (a, i) {
     var sc = L.scoreHistory(h.slice(0, i + 1));
     return '<tr><td>' + esc(a.date) + '</td><td><b>' + f1(sc.composite) + '</b></td>' + L.ZONES.map(function (z) { return '<td>' + f1(sc.zones[z.id].score) + '</td>'; }).join('') +
-      '<td class="mut">' + [a.flags && a.flags.sleep ? 'sleep<6h' : '', a.flags && a.flags.caffeine ? 'caffeine' : '', a.flags && a.flags.heat ? 'heat' : '', a.flags ? a.flags.tod : '', a.sls ? 'SLS ' + (a.sls.open ? '✓' : '✗') + '/' + (a.sls.closed ? '✓' : '✗') : ''].filter(Boolean).join(', ') +
+      '<td>' + f1(sc.pillar.score) + '</td>' +
+      '<td class="mut">' + [a.flags && a.flags.sleep ? 'sleep&lt;6h' : '', a.flags && a.flags.caffeine ? 'caffeine' : '', a.flags && a.flags.heat ? 'heat' : '', a.flags ? a.flags.tod : '', a.sls ? 'SLS ' + (a.sls.open ? '&#10003;' : '&#10007;') + '/' + (a.sls.closed ? '&#10003;' : '&#10007;') : ''].filter(Boolean).join(', ') +
       '</td><td><button class="danger" data-del="' + esc(a.savedAt || a.date) + '" type="button">Delete</button></td></tr>';
   }).join('');
   $app.innerHTML =
-    '<div class="card"><h2>Test history</h2>' + (h.length ? '<div style="overflow-x:auto"><table id="hist"><thead><tr><th>Date</th><th>Composite</th>' + L.ZONES.map(function (z) { return '<th>' + esc(z.short) + '</th>'; }).join('') + '<th>Conditions</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="mut">No tests yet.</p>') + '</div>' +
+    '<div class="card"><h2>Test history</h2>' + rescoredNote + (h.length ? '<div style="overflow-x:auto"><table id="hist"><thead><tr><th>Date</th><th>Composite</th>' + L.ZONES.map(function (z) { return '<th>' + esc(z.short) + '</th>'; }).join('') + '<th>Strength</th><th>Conditions</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="mut">No tests yet.</p>') + '</div>' +
     '<div class="card"><h2>Layoff (detraining)</h2><p class="mut">Time off since your last test lowers the baselines your targets and doses use (VO2max about −2.3%/week for 3 weeks, levelling at −16%; strength holds about 4 weeks). Your stored results are not changed.</p>' +
       '<form id="f-layoff" class="row"><label>From <input type="date" name="start" value="' + esc(lay.start || '') + '"></label><label>To <input type="date" name="end" value="' + esc(lay.end || '') + '"></label><button type="submit">Save layoff</button><button type="button" class="sec" id="clr-layoff">Clear</button></form></div>' +
     '<div class="card"><h2>Session log</h2>' + (log.length ? '<table id="logt"><thead><tr><th>Date</th><th>Session</th><th>Done</th><th>RPE</th><th>Notes</th></tr></thead><tbody>' + log.map(function (l) { return '<tr><td>' + esc(l.date) + '</td><td>' + esc(l.title) + '</td><td>' + esc(l.actual || '✓') + '</td><td>' + esc(l.rpe || '') + '</td><td>' + esc(l.note || '') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="mut">Nothing logged yet.</p>') + '</div>' +
@@ -1413,7 +1486,7 @@ function viewHistory() {
         var j = JSON.parse(r.result); if (j.app !== 'longevitymaxxing' || !j.data) throw new Error('not a LongevityMaxxing backup');
         if (!confirm('Replace the data in this browser with this backup?')) return;
         Object.keys(KEYS).forEach(function (k) { if (j.data[k] === null || j.data[k] === undefined) localStorage.removeItem(KEYS[k]); else save(k, j.data[k]); });
-        viewHistory(); document.getElementById('imp-msg').textContent = 'Backup restored.';
+        route(); var msgEl = document.getElementById('imp-msg'); if (msgEl) msgEl.textContent = 'Backup restored.';
       } catch (e) { document.getElementById('imp-msg').textContent = 'Could not import: ' + e.message; }
     };
     r.readAsText(file);
@@ -1421,10 +1494,51 @@ function viewHistory() {
   document.getElementById('btn-wipe').addEventListener('click', function () { if (!confirm('Erase all LongevityMaxxing data in this browser?')) return; Object.keys(KEYS).forEach(function (k) { localStorage.removeItem(KEYS[k]); }); viewHistory(); });
 }
 
+/* ---------------- Migration gate ---------------- */
+function viewMigrate(data) {
+  $app.innerHTML = '<div class="card" id="migrate-card"><h2>The curve changed</h2>' +
+    '<p>The seven forever-athlete zones (explosive power, sprint, anaerobic, VO2max, threshold, aerobic, multi-hour hike) are now scored on published age-graded tables where available. Push-ups and grip dynamometer have moved to the Strength pillar and are scored separately.</p>' +
+    '<p>Your stored results are kept and will be re-scored. Because the composite is now weighted differently (VO2max &#215;3, Strength pillar &#215;2, other zones &#215;1; hike is observed and not counted), old and new composite scores are not directly comparable.</p>' +
+    '<p>Recommended: download a backup before continuing.</p>' +
+    '<div class="row"><button id="btn-migrate-backup" type="button">Download backup</button>' +
+    '<button id="btn-migrate-continue" type="button" disabled>Continue</button></div>' +
+    '<p><a id="migrate-skip" href="#" style="font-size:.85rem;color:var(--mut)">Continue without a backup</a></p></div>';
+  document.getElementById('btn-migrate-backup').addEventListener('click', function () {
+    var d = {}; Object.keys(KEYS).forEach(function (k) { d[k] = load(k, null); });
+    var blob = new Blob([JSON.stringify({ app: 'longevitymaxxing', version: 2, exportedAt: new Date().toISOString(), data: d }, null, 2)], { type: 'application/json' });
+    var u = URL.createObjectURL(blob), aEl = document.createElement('a');
+    aEl.href = u; aEl.download = 'longevitymaxxing-' + today() + '.json'; document.body.appendChild(aEl); aEl.click(); aEl.remove();
+    setTimeout(function () { URL.revokeObjectURL(u); }, 1000);
+    document.getElementById('btn-migrate-continue').disabled = false;
+  });
+  document.getElementById('btn-migrate-continue').addEventListener('click', function () {
+    var m = L.migrateState(data);
+    if (m.program) save('program', m.program);
+    save('schema', 2);
+    var st = load('settings', {}); st.migratedAt = new Date().toISOString(); save('settings', st);
+    route();
+  });
+  document.getElementById('migrate-skip').addEventListener('click', function (e) {
+    e.preventDefault();
+    if (!confirm('Continue without downloading a backup? Your data will be re-scored on the new curve.')) return;
+    document.getElementById('btn-migrate-continue').disabled = false;
+    document.getElementById('btn-migrate-continue').click();
+  });
+}
+
 /* ---------------- router ---------------- */
 function route() {
   var parts = (location.hash || '').replace(/^#\/?/, '').split('/'), r = parts[0] || (history().length ? (load('program', null) ? 'today' : 'curve') : 'assess');
   Array.prototype.forEach.call(document.querySelectorAll('#nav a'), function (a) { a.classList.toggle('on', a.getAttribute('data-r') === r); });
+  /* migration gate: check schema before rendering any view */
+  var migData = { schema: load('schema', null), assessments: load('assessments', null), program: load('program', null) };
+  if (!migData.assessments && !migData.program) {
+    save('schema', 2);
+  } else if (L.needsMigration(migData)) {
+    viewMigrate(migData);
+    window.scrollTo(0, 0);
+    return;
+  }
   ({ import: viewImport, assess: viewAssess, curve: viewCurve, program: viewProgram, today: function () { viewToday(/^\d{4}-\d{2}-\d{2}$/.test(parts[1] || '') ? parts[1] : null); }, history: viewHistory }[r] || viewAssess)();
   window.scrollTo(0, 0);
 }
