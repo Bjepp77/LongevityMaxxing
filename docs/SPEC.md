@@ -89,3 +89,65 @@ Fixtures `fixtures/strong-sample.csv` (kg, lb and a comma-decimal row) and `fixt
 
 ## v2 sources (from run f49dc812)
 [1] PMC7664951 · [2] thieme 10.1055/s-0035-1549958 · [3] PMC5000509 · [4] PMC11534629 · [5] PMC9213394 · [6] PMC12080799 · [7] arXiv 2603.17495 · [10] BJSM 38/3/285 · [11] coachsci.sdsu.edu vol103/hasson · [16] help.hevyapp.com 38001424401943 · [17] aihealthexport.com apple-health-xml-format · [18] PMC11867321 · [20] lida.sport-iat.de 4092468 · [21] sponet 4097852 · [23] efyc.fahce.unlp.edu.ar 12634 · [24] forum.intervals.icu 5531 · [25] docs.ropensci.org Athlytics load_local_activities · [26] npm @garmin/fitsdk. Daniels & Gilbert, *Oxygen Power* (1979) for VDOT.
+
+---
+
+# v2.1 — Forever-athlete curve (PROPOSED, 2026-11-07 — not built; awaiting review)
+
+Owner decisions (2026-11-07): realign the curve to the forever-athlete zones as its own change, accepting that v1/v2 history is re-scored; weakest-first test order unchanged until this lands; import order Hevy CSV → Garmin FIT → Apple Health. Research basis: run f49dc812 ("R" below: §Per-zone proxies, §Showing a proxy baseline honestly, §Import formats, §Where auto-estimates backfire, §Limitations).
+
+## (a) The seven zones (short & hard → long & easy)
+| # | id | Zone | Field test | Scoring basis | Evidence tier |
+|---|---|---|---|---|---|
+| 1 | power | ~1 s explosive power | standing broad jump, best of 3 (cm) | own baseline + reference 203/165 cm (unchanged from v1) | emerging |
+| 2 | sprint | 10 s max speed | **60 m from a standing start**, best of 2, full rest (s) | WMA 2023 age-grade % (60 m) | emerging |
+| 3 | ana | 60 s anaerobic | 400 m run all-out (s); 500 m row stays as an own-baseline variant | WMA 2023 age-grade % (400 m); row = own baseline | weak |
+| 4 | vo2 | 2–5 min VO2max | 2K row or 12-min run (unchanged) | FRIEND percentile (unchanged) | strongest |
+| 5 | thr | 10–20 min threshold | 5K time trial (unchanged) | WMA road age-grade % (5 km) | moderate |
+| 6 | aer | 60 min aerobic | 10K or half-marathon race/time trial, or distance in a 60-min hard run | WMA road age-grade % (10 km / half; a 60-min distance is converted to 10K time with Riegel, labelled "converted") | moderate |
+| 7 | hike | multi-hour endurance | a hard hike or ruck ≥ 2 h: distance, ascent, pack load, moving time | **observed-only** Naismith ratio (below) — no validated norms | none |
+
+Why 60 m: a standing 60 m lasts 7–11 s for adults, so it is the 10 s zone, it is an official WMA event (age factors exist), and it needs only a measured straight. A flying 30 m needs two timers and a run-in, so it is listed as a later option, not v2.1.
+
+**Push-ups and grip — recommendation: keep them, off the curve, in a "Strength pillar" that still counts in the composite.** Reason: grip has the strongest mortality evidence in the whole app (v1 tier "strong") and strength is a pillar in the R report ("feeds the strength pillar, not a zone"); dropping them would throw away the best-evidenced measure, while forcing them onto a duration curve is wrong. Pillar = est. 1RM / bodyweight (lifter bands, unchanged), grip + dead hang (unchanged), push-ups (Cooper percentile, unchanged) → one pillar score = mean of the parts present. Alternatives rejected: drop entirely (loses grip evidence); keep as unscored extras (pillar would then not move the composite, which undervalues strength).
+
+## (b) Norms and honest limits for the new scoring
+- **Sprint / 400 m / 5K / 10K / half: age-grade %.** Age-graded % = (age-standard time ÷ your time) × 100, where the age standard = open world standard × WMA age factor for your age and sex. Sources: [WMA 2023 Appendix B track factors](https://world-masters-athletics.org/wp-content/uploads/2023/02/2023-WMA-Appendix-B.pdf) (60 m, 400 m); road 5 km/10 km/half: USATF MLDR 2025 road tables published by Alan Jones (CC0, GitHub). Embed the single-age factor rows for ages 30–90 M/F for these 5 events only (small). Label every score "age-graded %, not a population percentile" — the scale is anchored on world-best performances, so typical fit recreational adults land around 45–65%. Standard bands (WMA/BMAF): 60% local, 70% regional, 80% national, 90% world class.
+- **Sprint timing error.** Hand/phone stopwatch timing over a 30 m sprint is off by ~2% and needs a ≥ 5% change to exceed measurement error ([J Kinesiol Exerc Sci 2022](https://doaj.org/article/e85ade5f8b4b4189b692e04549fd216e)); timers differ by 0.19 ± 0.14 s per trial ([Haugen & Buchheit review](https://athleticswaikatobayofplenty.org.nz/wp-content/uploads/2020/05/haugen-buchheit-sprint-monitoring-sports-med-review-in-press.pdf)). So: protocol = phone on a tripod at the finish filming slow-motion, start on your own first movement, time from first movement to torso crossing by frame count (the app gives a frame-count helper); stopwatch allowed but flagged "hand-timed, ±0.2 s". MDC 5% (hand) / 3% (video). Smartphone timing apps are unvalidated (same sources) — say so.
+- **Hike: no validated norms (R §Per-zone: "No validated equation… Must test; observed, not maximal").** Score rule, labelled "observed effort, no published norms":
+  - Naismith expected time T_N = distance_km / 5 km/h + ascent_m / 600 m/h (Naismith 1892; Scottish Mountaineering Club convention), plus 10% per 10% bodyweight of pack load (labelled as a convention, not validated).
+  - Ratio = T_N / your moving time. Pass bands: ≥ 1.0 "at or above guidebook pace", 0.8–1.0 "steady", < 0.8 "below guidebook pace". Zone score = clamp(60 × ratio, 1, 99) for curve drawing only, plus own-baseline progress (+10 per improvement beyond MDC 10%).
+  - Requires ≥ 2 h moving time and ≥ 300 m ascent or ≥ 10 kg load, else "too short to count".
+  - Cannot claim: a percentile, a fitness level, a longevity association, or comparability across terrain/weather. Body mass, absolute VO2max and load matter more than relative VO2max for hiking (R [22], preprint) — shown as a note.
+
+## (c) History re-score and one-time migration
+Stored assessments keep their raw fields; scoring is recomputed, nothing is overwritten.
+| Stored field | New home |
+|---|---|
+| jumpCm | power |
+| anaS (+ anaMode) | ana (400 m → age-grade; 500 m row → own baseline) |
+| row2kS / cooperM | vo2 |
+| fiveKS | thr |
+| liftKg/liftReps/lift, gripKg, hangS, pushups | Strength pillar |
+| z2Min, longPace | no zone — kept as the weekly zone-2 behaviour target in the program (shown on the program page) |
+| — | sprint, aer, hike: "no data — test this" |
+New fields: sprintS, sprintTiming (video|hand), aerMode (10k|half|60min), aerS / aerM, hike {km, ascentM, loadKg, movingS, date}.
+**Composite:** evidence-weighted mean over present items: vo2 ×3, Strength pillar ×2, every other zone ×1 (hike ×0.5 because it is observed-only). Composites from before and after the migration are not comparable; history shows a "curve v2.1" divider and does not label the jump as improved/declined.
+**Migration (once):** on first load with `lmx.schema` absent or < 2, show a blocking card: "The curve changed. Download a backup first" [Download backup] [Continue]. Continue is enabled only after the backup download fires (or an explicit "skip backup" link with confirm). Then set `lmx.schema = 2`. The stored program (built on old zone ids) is kept but marked "built on the old curve — regenerate"; v2 import proxies map z5→vo2, z6→thr, z7→aer. Backup import accepts schema 1 and 2 files (schema 1 files trigger the same migration).
+
+## (d) Block targets and program (noise gate unchanged: a number only when expected change > MDC)
+- sprint: expected −1%/4 wk for 8–12 wk then flat; MDC 5% hand / 3% video → usually "trend only" (correct: phone timing can't see one block's gain).
+- ana / thr / aer: as v1 rates (ana −0.75%/4 wk, thr and aer −1%/4 wk), MDC 2%; targets shown in raw time, age-grade shown alongside.
+- hike: behaviour target, not a performance number: one long hike/ruck every 2–4 weeks, +15 min per block up to 4 h, load ≤ 10% bodyweight; performance shown as trend only (MDC 10%).
+- Program: the power day keeps sprints (6 × 20–40 m, full rest); weak-zone extras: `sprintB` (accelerations 4 × 20 m + flying 3 × 30 m, ≥ 3 min rest, its own day or ≥ 3 h from endurance), `aerB` (60-min steady-hard run at 10K-pace + 8–12%), `hike` (replaces z2long on week 2 of each block). Strength pillar weak → existing strengthC. Rest/endurance separation rules unchanged.
+
+## (e) Import order (v2.1+, from R §Import formats)
+1. **Hevy CSV** — low effort, maps to the same e1RM pipeline; headers unconfirmed by R → get a real export before coding.
+2. **Garmin FIT** — medium; `@garmin/fitsdk` runs in the browser [26]; must be vendored into index.html (no CDN), so check its size first; gives per-second data → real best efforts for critical speed and 60 m/400 m splits (still labelled proxies).
+3. **Apple Health XML** — high; 200 MB–1 GB+, needs a streaming parse in a Web Worker [17]; defer until FIT ships.
+TrainingPeaks stays unresearched.
+
+## (f) v2.1 acceptance
+Fixtures: `fixtures/backup-schema1.json` (a v2 backup with two assessments incl. 400 m, 5K, grip, push-ups, z2Min and a program) and `fixtures/agegrade-cases.json` (≥ 10 hand-looked-up cases from the published WMA calculator: 60 m, 400 m, 5K, 10K, half, M/F, ages 35–75).
+Unit tests: age-grade % matches the calculator within 0.1 pt for every case; Naismith ratio and the hike "too short" rule; the re-score mapping table above field by field; composite weights; schema-1 backup → migrated scores with sprint/aer/hike = no data; noise gate for sprint (hand vs video MDC); program contains sprintB/aerB/hike when those zones are weakest. Existing v1/v2 tests updated only where zone ids change (each change listed in the commit).
+Staging walk-through (browser smoke, clicks named in SMOKE-OK): restore `backup-schema1.json` → migration card blocks → Download backup fires → Continue → curve shows 7 new zones, 3 "no data", Strength pillar card with grip + push-ups → enter a 60 m (video) + a hike → scores and "observed effort, no published norms" label appear → block targets show sprint as trend-only → generate program → reload persists → export shows schema 2.
