@@ -23,7 +23,7 @@ def main() -> None:
         expect(page.locator('#target-line')).to_have_count(1)
         composite = page.locator('#composite').inner_text()
         assert composite.isdigit(), composite
-        assert page.locator('.zcard').count() == 7
+        assert page.locator('.zcard').count() == 8   # seven zones + the Strength pillar
         expect(page.locator('#weakest')).to_contain_text('Weakest zones')
         assert page.locator('#targets tbody tr').count() >= 8
         page.screenshot(path='/tmp/lmx-curve.png', full_page=True)
