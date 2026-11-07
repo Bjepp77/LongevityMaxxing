@@ -7,6 +7,6 @@ resources:
   - k8s/ingress.yaml
 images:
   - name: ubuntu:30500/longevitymaxxing-staging
-    digest: sha256:d824c02be90dfb9de774cbfad1706643f49da713fb3043a8d54ef3feea31a12a
+    digest: sha256:bf3d8aca4a0b85da82972cf5591ff03c4f04f89ca3ad73850edb662303762903
 # Redeploy:  kubectl apply -k . (re-applies this exact image)
 # Rebuild:   re-trigger the deploy pipeline for branch main in Colossus
