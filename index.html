@@ -3,12 +3,826 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>LongevityMaxxing</title>
-<style>body{font-family:system-ui,sans-serif;max-width:40rem;margin:4rem auto;padding:0 1rem;color:#1a1a1a}</style>
+<meta name="robots" content="noindex, nofollow">
+<title>LongevityMaxxing — raise the whole curve</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#16191f;--mut:#5d6573;--line:#e3e6eb;--acc:#0f766e;--acc2:#14b8a6;--warn:#b45309;--bad:#b91c1c;--good:#15803d;--tgt:#7c3aed}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#0b1f1d;color:#e6fffb;padding:.8rem 1rem}
+header h1{margin:0;font-size:1.15rem;letter-spacing:.02em}
+header p{margin:.1rem 0 0;color:#9ad9d0;font-size:.85rem}
+nav{display:flex;gap:.25rem;flex-wrap:wrap;background:#0b1f1d;padding:0 1rem .5rem}
+nav a{color:#cdeee9;text-decoration:none;padding:.35rem .7rem;border-radius:.4rem;font-size:.9rem}
+nav a.on{background:var(--acc);color:#fff}
+main{max-width:980px;margin:0 auto;padding:1rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:.7rem;padding:1rem;margin-bottom:1rem}
+h2{font-size:1.1rem;margin:0 0 .6rem}
+h3{font-size:.98rem;margin:.2rem 0 .4rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.7rem}
+label{display:block;font-size:.82rem;color:var(--mut)}
+input,select,textarea{width:100%;font:inherit;padding:.4rem .5rem;border:1px solid #cfd4dc;border-radius:.4rem;background:#fff;color:var(--ink)}
+input[type=checkbox]{width:auto}
+.chk{display:flex;gap:.4rem;align-items:center;color:var(--ink);font-size:.88rem}
+button{font:inherit;border:0;border-radius:.45rem;padding:.5rem .9rem;background:var(--acc);color:#fff;cursor:pointer}
+button.sec{background:#e7ecef;color:var(--ink)}
+button.danger{background:#fde8e8;color:var(--bad)}
+.row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.mut{color:var(--mut);font-size:.85rem}
+.badge{display:inline-block;font-size:.72rem;padding:.05rem .45rem;border-radius:1rem;border:1px solid var(--line);color:var(--mut);white-space:nowrap}
+.t-strongest{background:#dcfce7;color:#166534;border-color:#bbf7d0}.t-strong{background:#e0f2fe;color:#075985;border-color:#bae6fd}
+.t-moderate{background:#eef2ff;color:#3730a3;border-color:#c7d2fe}.t-emerging{background:#fef9c3;color:#854d0e;border-color:#fde68a}
+.t-weak{background:#ffedd5;color:#9a3412;border-color:#fed7aa}.t-none,.t-lever{background:#f1f5f9;color:#475569}
+.chg-improved{color:var(--good);font-weight:600}.chg-declined{color:var(--bad);font-weight:600}.chg-noise{color:var(--mut)}
+.big{font-size:2.2rem;font-weight:700;color:var(--acc)}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{text-align:left;padding:.35rem .4rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mut);font-weight:600}
+.weak{outline:2px solid #f59e0b}
+.zcard{border:1px solid var(--line);border-radius:.55rem;padding:.6rem}
+.score{font-size:1.4rem;font-weight:700}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);gap:.3rem}
+.day{border:1px solid var(--line);border-radius:.4rem;padding:.3rem;font-size:.75rem;min-height:4.5rem;background:#fff}
+.day.today{outline:2px solid var(--acc)}
+.day.deload{background:#f8fafc}
+.pill{display:block;border-radius:.3rem;padding:.1rem .3rem;margin:.12rem 0;color:#fff;font-size:.72rem;line-height:1.25}
+.s-strength{background:#334155}.s-vo2{background:#dc2626}.s-z2{background:#0284c7}.s-power{background:#ca8a04}.s-anaerobic{background:#ea580c}.s-lt{background:#9333ea}.s-muscEnd{background:#475569}.s-stability{background:#0d9488}
+.done{opacity:.55;text-decoration:line-through}
+.note{background:#fffbeb;border:1px solid #fde68a;border-radius:.5rem;padding:.5rem .7rem;font-size:.85rem}
+ul.dose{margin:.3rem 0 .4rem 1.1rem;padding:0}
+svg text{font-family:inherit}
+.hide{display:none}
+footer{max-width:980px;margin:0 auto;padding:0 1rem 2rem;color:var(--mut);font-size:.78rem}
+@media (max-width:640px){.wk{grid-template-columns:repeat(2,1fr)}}
+</style>
 </head>
 <body>
-<h1>LongevityMaxxing</h1>
-<p>Raise the whole curve. v1 is being built; see <a href="docs/SPEC.md">docs/SPEC.md</a>.</p>
+<header>
+  <h1>LongevityMaxxing</h1>
+  <p>Raise the whole curve — seven zones from short &amp; hard to long &amp; easy. Your data stays in this browser.</p>
+</header>
+<nav id="nav">
+  <a href="#/assess" data-r="assess">1 · Test</a>
+  <a href="#/curve" data-r="curve">2 · Curve &amp; targets</a>
+  <a href="#/program" data-r="program">3 · 12-week program</a>
+  <a href="#/today" data-r="today">4 · Today</a>
+  <a href="#/history" data-r="history">5 · History &amp; data</a>
+</nav>
+<main id="app"></main>
+<footer>Fitness levels here are <em>associated with</em> longer life in observational studies; they are not proven to cause it. Norms: FRIEND registry 2015 (VO2max), Cooper Institute (push-ups, ages 40–49 only), Dodds 2014 (grip), lifter-community bands (strength, not population percentiles). Not medical advice.</footer>
+
+<!-- ===================== CORE: pure logic, no DOM (unit-tested in tests/core.test.mjs) ===================== -->
+<script id="lmx-core">
+(function (root) {
+'use strict';
+
+/* ---------- helpers ---------- */
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function num(v) { if (v === null || v === undefined || v === '') return null; var n = Number(v); return isFinite(n) ? n : null; }
+function round(v, step) { step = step || 1; return Math.round(v / step) * step; }
+function parseTime(s) {
+  if (s === null || s === undefined) return null;
+  s = String(s).trim(); if (!s) return null;
+  var parts = s.split(':');
+  if (parts.length > 3) return null;
+  var total = 0;
+  for (var i = 0; i < parts.length; i++) {
+    var n = Number(parts[i]); if (!isFinite(n) || n < 0) return null;
+    total = total * 60 + n;
+  }
+  return total > 0 ? total : null;
+}
+function fmtTime(sec) {
+  if (sec === null || sec === undefined || !isFinite(sec)) return '—';
+  var s = Math.round(sec), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+  var mm = h ? String(m).padStart(2, '0') : String(m);
+  return (h ? h + ':' : '') + mm + ':' + String(r).padStart(2, '0');
+}
+function daysBetween(a, b) { return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000); }
+function addDays(iso, n) { var d = new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000); return d.toISOString().slice(0, 10); }
+function mean(xs) { xs = xs.filter(function (x) { return x !== null && x !== undefined; }); return xs.length ? xs.reduce(function (a, b) { return a + b; }, 0) / xs.length : null; }
+
+/* ---------- zones ---------- */
+var ZONES = [
+  { id: 'z1', n: 1, name: 'Explosive power', short: 'Power', test: 'Standing broad jump', tier: 'emerging', basis: 'own baseline' },
+  { id: 'z2', n: 2, name: 'Absolute strength (+ grip)', short: 'Strength', test: '5-rep trap-bar deadlift / squat · dead hang · grip', tier: 'moderate', basis: 'lifter bands + grip norms' },
+  { id: 'z3', n: 3, name: 'Anaerobic capacity', short: 'Anaerobic', test: '400 m run or 500 m row, all-out', tier: 'none', basis: 'own baseline' },
+  { id: 'z4', n: 4, name: 'Muscular endurance', short: 'Musc. end.', test: 'Push-ups to failure', tier: 'weak', basis: 'Cooper Institute percentile' },
+  { id: 'z5', n: 5, name: 'VO2max', short: 'VO2max', test: '2K row or 12-min run', tier: 'strongest', basis: 'FRIEND percentile' },
+  { id: 'z6', n: 6, name: 'Lactate threshold', short: 'Threshold', test: '5K time trial', tier: 'none', basis: 'own baseline' },
+  { id: 'z7', n: 7, name: 'Cardiovascular endurance', short: 'Endurance', test: 'Weekly zone-2 minutes', tier: 'lever', basis: 'own baseline' }
+];
+var TIER_LABEL = { strongest: 'Evidence: strongest', strong: 'Evidence: strong', moderate: 'Evidence: moderate', emerging: 'Evidence: emerging', weak: 'Evidence: weak', none: 'Evidence: none separate', lever: 'Lever (no separate evidence)' };
+/* composite weights: zone 5 x3, zone 2 strength x2, zone 2b grip x2, others x1 */
+var WEIGHTS = { z1: 1, z2s: 2, z2g: 2, z3: 1, z4: 1, z5: 3, z6: 1, z7: 1 };
+
+/* ---------- norms ---------- */
+/* FRIEND registry treadmill VO2max (Kaminsky 2015, Mayo Clin Proc), rows = 20-29..70-79, cols = P10,P25,P50,P75,P90,P95 */
+var FRIEND_P = [10, 25, 50, 75, 90, 95];
+var FRIEND = {
+  M: [[32.1, 40.1, 48.0, 55.2, 61.8, 66.3], [30.2, 35.9, 42.4, 49.2, 56.5, 59.8], [26.8, 31.9, 37.8, 45.0, 52.1, 55.6],
+      [22.8, 27.1, 32.6, 39.7, 45.6, 50.7], [20.2, 23.7, 28.2, 34.5, 40.3, 43.0], [17.2, 20.4, 24.4, 30.4, 36.6, 39.7]],
+  F: [[25.3, 30.5, 37.6, 44.7, 51.3, 56.0], [21.0, 25.3, 30.2, 36.1, 41.4, 45.8], [18.8, 22.1, 26.7, 32.4, 38.4, 41.7],
+      [17.0, 20.0, 23.4, 27.6, 32.0, 35.9], [15.0, 17.3, 20.0, 23.8, 27.0, 29.4], [13.8, 15.6, 18.3, 20.8, 23.1, 24.1]]
+};
+/* Cooper Institute push-ups to failure, ages 40-49 only: P25/P50/P75 */
+var PUSHUP_P = [25, 50, 75];
+var PUSHUP = { M: [11, 14, 19], F: [8, 11, 14] };
+/* lifter-community bands, est. 1RM / bodyweight -> band score (NOT population percentiles) */
+var LIFT_BANDS = {
+  trapbar: { M: [1.0, 1.25, 1.75, 2.25, 2.75], F: [0.75, 1.0, 1.4, 1.8, 2.2] },
+  squat:   { M: [0.75, 1.0, 1.5, 2.0, 2.5],   F: [0.5, 0.75, 1.1, 1.5, 1.9] }
+};
+var BAND_NAMES = ['Beginner', 'Novice', 'Intermediate', 'Advanced', 'Elite'];
+var BAND_SCORES = [20, 40, 60, 80, 95];
+/* grip: weak < Dodds 2014 (peak mean -2SD), strong > Camry grade-D 40-44 band */
+var GRIP = { M: { weak: 32, strong: 55.3 }, F: { weak: 19, strong: 32.7 } };
+var BROAD_JUMP_REF = { M: 203, F: 165 };   /* Bergeron over-40 standard, reference only */
+
+function ageBand(age) { return clamp(Math.floor(age / 10) - 2, 0, 5); }
+function pctFromPoints(v, vals, pcts) {
+  var n = vals.length, slope;
+  if (v <= vals[0]) { slope = (pcts[1] - pcts[0]) / (vals[1] - vals[0]); return clamp(pcts[0] - (vals[0] - v) * slope, 1, 99); }
+  for (var i = 0; i < n - 1; i++) {
+    if (v <= vals[i + 1]) return pcts[i] + (v - vals[i]) / (vals[i + 1] - vals[i]) * (pcts[i + 1] - pcts[i]);
+  }
+  /* above the top published row: level off toward 99 instead of extrapolating a straight line */
+  var step = vals[n - 1] - vals[n - 2];
+  return clamp(pcts[n - 1] + (99 - pcts[n - 1]) * (1 - Math.exp(-(v - vals[n - 1]) / (2 * step))), 1, 99);
+}
+function vo2Percentile(vo2, age, sex) { return pctFromPoints(vo2, FRIEND[sex][ageBand(age)], FRIEND_P); }
+function pushupPercentile(reps, sex) { return pctFromPoints(reps, PUSHUP[sex], PUSHUP_P); }
+function percentileLabel(p) {
+  if (p >= 90) return 'Elite (aspirational, above P90)';
+  if (p >= 75) return 'High'; if (p >= 50) return 'Above median'; if (p >= 25) return 'Below median'; return 'Low';
+}
+
+/* ---------- test math ---------- */
+function vo2FromRow2k(sec, kg, sex) { var T = sec / 60, Y = sex === 'F' ? 10.26 - 0.93 * T : 10.7 - 0.9 * T; return Y * 1000 / kg; }
+function row2kFromVo2(vo2, kg, sex) { var Y = vo2 * kg / 1000, T = sex === 'F' ? (10.26 - Y) / 0.93 : (10.7 - Y) / 0.9; return T * 60; }
+function vo2FromCooper(m) { return (m - 504.9) / 44.73; }
+function cooperFromVo2(vo2) { return vo2 * 44.73 + 504.9; }
+function e1rm(kg, reps) { return kg * (1 + reps / 30); }   /* Epley */
+function vo2Of(a) {
+  if (a.vo2Mode === 'cooper12') return a.cooperM ? vo2FromCooper(a.cooperM) : null;
+  return a.row2kS && a.bw ? vo2FromRow2k(a.row2kS, a.bw, a.sex) : null;
+}
+function e1rmOf(a) { return a.liftKg && a.liftReps ? e1rm(a.liftKg, a.liftReps) : null; }
+function hangTarget(age, sex) { var base = sex === 'F' ? 90 : 120; return Math.max(30, base - Math.max(0, Math.floor(age / 10) - 4) * 12.5); }
+
+function bandPosition(rel, bands) {
+  if (rel <= bands[0]) return { score: clamp(BAND_SCORES[0] * rel / bands[0], 1, 99), band: rel < bands[0] * 0.9 ? 'Below beginner' : BAND_NAMES[0] };
+  for (var i = 0; i < bands.length - 1; i++) {
+    if (rel < bands[i + 1]) return { score: BAND_SCORES[i] + (rel - bands[i]) / (bands[i + 1] - bands[i]) * (BAND_SCORES[i + 1] - BAND_SCORES[i]), band: BAND_NAMES[i] };
+  }
+  return { score: clamp(95 + (rel - bands[4]) / bands[4] * 20, 95, 99), band: 'Elite (aspirational)' };
+}
+function strengthScore(a) {
+  var e = e1rmOf(a); if (!e || !a.bw) return null;
+  var rel = e / a.bw, bp = bandPosition(rel, LIFT_BANDS[a.lift || 'trapbar'][a.sex]);
+  return { score: bp.score, band: bp.band, rel: rel, e1rm: e };
+}
+function gripKgScore(kg, sex) {
+  var g = GRIP[sex];
+  if (kg <= g.weak) return clamp(25 * kg / g.weak, 1, 25);
+  if (kg <= g.strong) return 25 + (kg - g.weak) / (g.strong - g.weak) * 60;
+  return clamp(85 + (kg - g.strong) / (g.strong * 0.2) * 14, 85, 99);
+}
+function gripBand(kg, sex) { var g = GRIP[sex]; return kg < g.weak ? 'Weak' : kg > g.strong ? 'Strong' : 'Normal'; }
+function hangScore(s, age, sex) { return clamp(80 * s / hangTarget(age, sex), 1, 99); }
+function gripScore(a) {
+  var parts = [];
+  if (num(a.gripKg)) parts.push(gripKgScore(a.gripKg, a.sex));
+  if (num(a.hangS)) parts.push(hangScore(a.hangS, a.age, a.sex));
+  return parts.length ? mean(parts) : null;
+}
+
+/* ---------- noise gate: minimal detectable change per metric ---------- */
+var METRICS = {
+  jump:     { label: 'Broad jump', unit: 'cm', better: 1, rel: 0.07 },
+  e1rm:     { label: 'Est. 1RM', unit: 'kg', better: 1, rel: 0.10 },
+  grip:     { label: 'Grip', unit: 'kg', better: 1, abs: 6 },
+  hang:     { label: 'Dead hang', unit: 's', better: 1, rel: 0.05 },
+  ana:      { label: 'Anaerobic test', unit: 's', better: -1, rel: 0.02 },
+  pushups:  { label: 'Push-ups', unit: 'reps', better: 1, abs: 1 },
+  vo2:      { label: 'Est. VO2max', unit: 'mL/kg/min', better: 1, abs: 1.5 },
+  fiveK:    { label: '5K', unit: 's', better: -1, rel: 0.02 },
+  z2min:    { label: 'Zone-2 minutes', unit: 'min/wk', better: 1, rel: 0.10, absMin: 15 }
+};
+function mdc(metric, ref) { var m = METRICS[metric]; if (m.abs) return m.abs; return Math.max(m.absMin || 0, Math.abs(ref) * m.rel); }
+function classifyChange(metric, prev, cur) {
+  if (prev === null || cur === null || prev === undefined || cur === undefined) return null;
+  var d = (cur - prev) * METRICS[metric].better, gate = mdc(metric, prev);
+  if (metric === 'pushups') return d >= 1 ? 'improved' : d <= -1 ? 'declined' : 'noise';
+  return d > gate ? 'improved' : d < -gate ? 'declined' : 'noise';
+}
+/* raw metric values for one assessment; `key` marks test variants that are not comparable */
+function metricValues(a) {
+  return {
+    jump: { v: num(a.jumpCm), key: 'jump' },
+    e1rm: { v: e1rmOf(a), key: a.lift || 'trapbar' },
+    grip: { v: num(a.gripKg), key: 'grip' },
+    hang: { v: num(a.hangS), key: 'hang' },
+    ana: { v: num(a.anaS), key: a.anaMode || 'run400' },
+    pushups: { v: num(a.pushups), key: 'pushups' },
+    vo2: { v: vo2Of(a), key: a.vo2Mode || 'row2k' },
+    fiveK: { v: num(a.fiveKS), key: 'fiveK' },
+    z2min: { v: num(a.z2Min), key: 'z2min' }
+  };
+}
+
+/* own-baseline score: first test = 50, +10 per confirmed improvement beyond MDC, -10 per confirmed decline */
+function baselineScore(history, metric) {
+  var score = null, ref = null, refKey = null, status = null;
+  history.forEach(function (a) {
+    var mv = metricValues(a)[metric]; if (mv.v === null) return;
+    if (score === null) { score = 50; ref = mv.v; refKey = mv.key; status = 'baseline'; return; }
+    if (mv.key !== refKey) { ref = mv.v; refKey = mv.key; status = 'new test variant — new baseline'; return; }
+    var c = classifyChange(metric, ref, mv.v);
+    if (c === 'improved') { score += 10; ref = mv.v; status = 'improved'; }
+    else if (c === 'declined') { score -= 10; ref = mv.v; status = 'declined'; }
+    else status = 'within noise';
+  });
+  return score === null ? null : { score: clamp(score, 1, 99), ref: ref, status: status };
+}
+
+/* ---------- scoring ---------- */
+function scoreHistory(history) {
+  /* history: assessments sorted ascending by date; scores the LAST one with the full history for own-baseline zones */
+  if (!history.length) return null;
+  var a = history[history.length - 1], prev = history.length > 1 ? history[history.length - 2] : null;
+  var mv = metricValues(a), pv = prev ? metricValues(prev) : null;
+  function change(metric) {
+    if (!pv || pv[metric].v === null || mv[metric].v === null) return null;
+    if (pv[metric].key !== mv[metric].key) return 'different test';
+    return classifyChange(metric, pv[metric].v, mv[metric].v);
+  }
+  var out = {}, entries = [];
+  var b1 = baselineScore(history, 'jump');
+  out.z1 = { score: b1 && b1.score, detail: mv.jump.v !== null ? mv.jump.v + ' cm (reference ' + BROAD_JUMP_REF[a.sex] + ' cm, not age-adjusted)' : null,
+             changes: [['jump', change('jump')]], tie: mv.jump.v ? mv.jump.v / BROAD_JUMP_REF[a.sex] : 1 };
+  var st = strengthScore(a), gs = gripScore(a);
+  var z2parts = [st && st.score, gs].filter(function (x) { return x !== null && x !== undefined; });
+  out.z2 = { score: z2parts.length ? mean(z2parts) : null, strength: st, grip: gs,
+             detail: (st ? 'est. 1RM ' + Math.round(st.e1rm) + ' kg = ' + st.rel.toFixed(2) + '× BW · ' + st.band + ' (lifter-community band)' : 'no lift entered') +
+                     (num(a.gripKg) ? ' · grip ' + a.gripKg + ' kg ' + gripBand(a.gripKg, a.sex) : '') +
+                     (num(a.hangS) ? ' · hang ' + a.hangS + ' s of ' + Math.round(hangTarget(a.age, a.sex)) + ' s target' : ''),
+             changes: [['e1rm', change('e1rm')], ['grip', change('grip')], ['hang', change('hang')]], tie: 1 };
+  var b3 = baselineScore(history, 'ana');
+  out.z3 = { score: b3 && b3.score, detail: mv.ana.v ? fmtTime(mv.ana.v) + (a.anaMode === 'row500' ? ' (500 m row)' : ' (400 m run)') : null, changes: [['ana', change('ana')]], tie: 1 };
+  var pp = mv.pushups.v !== null ? pushupPercentile(mv.pushups.v, a.sex) : null;
+  out.z4 = { score: pp, pct: pp, detail: mv.pushups.v !== null ? mv.pushups.v + ' reps · P' + Math.round(pp) + ' · ' + percentileLabel(pp) + (a.age < 40 || a.age > 49 ? ' (40–49 norms; none published for your age here)' : '') : null,
+             changes: [['pushups', change('pushups')]], tie: 1 };
+  var vp = mv.vo2.v !== null ? vo2Percentile(mv.vo2.v, a.age, a.sex) : null;
+  out.z5 = { score: vp, pct: vp, vo2: mv.vo2.v,
+             detail: mv.vo2.v !== null ? 'est. ' + mv.vo2.v.toFixed(1) + ' mL/kg/min · P' + Math.round(vp) + ' · ' + percentileLabel(vp) : null,
+             changes: [['vo2', change('vo2')]], tie: 1 };
+  var b6 = baselineScore(history, 'fiveK');
+  out.z6 = { score: b6 && b6.score, detail: mv.fiveK.v ? fmtTime(mv.fiveK.v) + ' 5K' : null, changes: [['fiveK', change('fiveK')]], tie: 1 };
+  var b7 = baselineScore(history, 'z2min');
+  out.z7 = { score: b7 && b7.score, detail: mv.z2min.v !== null ? mv.z2min.v + ' min/week zone 2 (aim 150–200+)' : null, changes: [['z2min', change('z2min')]],
+             tie: mv.z2min.v !== null ? Math.min(1.5, mv.z2min.v / 150) : 1 };
+  var w = 0, s = 0;
+  function add(key, v) { if (v !== null && v !== undefined) { w += WEIGHTS[key]; s += WEIGHTS[key] * v; } }
+  add('z1', out.z1.score); add('z2s', st && st.score); add('z2g', gs); add('z3', out.z3.score);
+  add('z4', out.z4.score); add('z5', out.z5.score); add('z6', out.z6.score); add('z7', out.z7.score);
+  var ranked = ZONES.filter(function (z) { return out[z.id].score !== null && out[z.id].score !== undefined; })
+    .sort(function (x, y) { return (out[x.id].score - out[y.id].score) || (out[x.id].tie - out[y.id].tie) || (x.n - y.n); });
+  var flagsDiffer = prev ? JSON.stringify(prev.flags || {}) !== JSON.stringify(a.flags || {}) : false;
+  return { assessment: a, zones: out, composite: w ? s / w : null, weakest: ranked.slice(0, 2).map(function (z) { return z.id; }), flagsDiffer: flagsDiffer };
+}
+
+/* ---------- detraining (applied to stored baselines; never resets them) ---------- */
+function vo2DetrainLoss(days) {
+  if (days <= 0) return 0;
+  if (days <= 21) return 0.07 * days / 21;          /* ~ -2.3%/week for 3 weeks (Coyle 1984) */
+  if (days <= 56) return 0.07 + 0.09 * (days - 21) / 35;
+  return 0.16;                                     /* plateau */
+}
+function strengthDetrainLoss(days) {
+  var weeks = days / 7; if (weeks <= 4) return 0;   /* trivial loss up to ~4 weeks (Bosquet 2013) */
+  return Math.min(0.25, 0.01 * Math.pow(weeks - 4, 1.5));
+}
+function layoffDays(layoff, afterDate) {
+  if (!layoff || !layoff.start || !layoff.end) return 0;
+  if (afterDate && layoff.end <= afterDate) return 0;  /* layoff before the latest test is already in the numbers */
+  var start = afterDate && layoff.start < afterDate ? afterDate : layoff.start;
+  return Math.max(0, daysBetween(start, layoff.end));
+}
+function effectiveBaseline(a, layoff) {
+  var d = layoffDays(layoff, a.date), lv = vo2DetrainLoss(d), ls = strengthDetrainLoss(d);
+  var vo2 = vo2Of(a), e = e1rmOf(a);
+  return { days: d, vo2Loss: lv, strengthLoss: ls, vo2: vo2 !== null ? vo2 * (1 - lv) : null, e1rm: e !== null ? e * (1 - ls) : null };
+}
+
+/* ---------- block targets (8-12 week cycles), gated by test noise ---------- */
+var STRENGTH_RATE = { novice: 0.04, intermediate: 0.015, advanced: 0.0075 };
+function blockTargets(history, weeks, layoff) {
+  var a = history[history.length - 1], blocks = weeks / 4, eff = effectiveBaseline(a, layoff), T = [];
+  function push(zone, metric, cur, target, fmt, unitLabel, extra) {
+    var delta = (target - cur) * METRICS[metric].better, gate = metric === 'pushups' ? 1 : mdc(metric, cur);
+    T.push(Object.assign({ zone: zone, metric: metric, label: METRICS[metric].label, current: cur, target: target, fmt: fmt, unit: unitLabel,
+      expected: delta, mdc: gate, shown: delta >= gate - 1e-9 }, extra || {}));
+  }
+  var id = function (v) { return String(v); };
+  if (num(a.jumpCm)) {
+    var jb = Math.min(blocks, 3);   /* 1-2% per 4 wk for 8-12 wk, then flat */
+    push('z1', 'jump', a.jumpCm, round(a.jumpCm * (1 + 0.015 * jb)), id, 'cm', { why: 'power +1–2%/4 wk' });
+  }
+  var e = eff.e1rm;
+  if (e) {
+    var rate = STRENGTH_RATE[a.level || 'intermediate'];
+    push('z2', 'e1rm', round(e), round(e * (1 + rate * blocks)), id, 'kg est. 1RM', { why: (a.level || 'intermediate') + ' ' + (rate * 100).toFixed(1) + '%/4 wk' });
+    T.push({ zone: 'z2', metric: 'repPR', label: 'Rep-PR at ' + a.liftKg + ' kg', current: a.liftReps, target: a.liftReps + Math.round(blocks), fmt: id, unit: 'reps',
+      expected: Math.round(blocks), mdc: 1, shown: true, why: 'rep PRs are exact: +1 rep per 4-week block' });
+  }
+  if (num(a.gripKg)) push('z2', 'grip', a.gripKg, round(a.gripKg * (1 + 0.005 * blocks)), id, 'kg', { why: 'grip 0–1%/4 wk' });
+  if (num(a.hangS)) push('z2', 'hang', a.hangS, round(a.hangS * (1 + 0.03 * blocks)), id, 's', { why: 'own-baseline seconds, +5–10%/block' });
+  if (num(a.anaS)) push('z3', 'ana', a.anaS, round(a.anaS * (1 - 0.0075 * blocks)), fmtTime, a.anaMode === 'row500' ? '500 m row' : '400 m run', { why: 'sprint ~1–2% per 8 wk' });
+  if (num(a.pushups) !== null) T.push({ zone: 'z4', metric: 'pushups', label: 'Push-ups', current: a.pushups, target: a.pushups + 2 * Math.round(blocks), fmt: id, unit: 'reps',
+      expected: 2 * Math.round(blocks), mdc: 1, shown: true, why: 'rep-PR ladder: +2 per block' });
+  var v = eff.vo2;
+  if (v) {
+    var first = history.filter(function (h) { return vo2Of(h) !== null; }).length <= 1;
+    var pct = vo2Percentile(v, a.age, a.sex);
+    var vr = pct > 90 ? 0.005 : first ? 0.025 : 0.01;
+    var vt = v * (1 + vr * blocks), cur, tgt, fmt, unit;
+    if (a.vo2Mode === 'cooper12') { cur = round(cooperFromVo2(v)); tgt = round(cooperFromVo2(vt)); fmt = id; unit = 'm in 12 min'; }
+    else { cur = round(row2kFromVo2(v, a.bw, a.sex)); tgt = round(row2kFromVo2(vt, a.bw, a.sex)); fmt = fmtTime; unit = '2K row'; }
+    var dv = vt - v;
+    T.push({ zone: 'z5', metric: 'vo2', label: 'VO2max test', current: cur, target: tgt, fmt: fmt, unit: unit, vo2: v, vo2Target: vt,
+      expected: dv, mdc: 1.5, shown: dv >= 1.5,
+      why: (pct > 90 ? 'above P90: ~0.5%/4 wk' : first ? 'first block 2–3%/4 wk' : '~1%/4 wk after the first block') + ' → +' + dv.toFixed(1) + ' mL/kg/min (noise ±1.5)' });
+  }
+  if (num(a.fiveKS)) push('z6', 'fiveK', a.fiveKS, round(a.fiveKS * (1 - 0.01 * blocks)), fmtTime, '5K', { why: 'threshold ~1%/4 wk (thin data)' });
+  if (num(a.z2Min) !== null) {
+    var zc = a.z2Min, zt = zc >= 200 ? zc : clamp(zc + 20 * blocks, 150, 200);
+    T.push({ zone: 'z7', metric: 'z2min', label: 'Zone-2 minutes / week', current: zc, target: Math.max(zt, zc), fmt: id, unit: 'min/wk',
+      expected: Math.max(zt, zc) - zc, mdc: mdc('z2min', zc || 1), shown: true, why: 'behaviour target: build to 150–200+ min/week' });
+  }
+  return { weeks: weeks, blocks: blocks, detraining: eff, items: T };
+}
+
+/* projected zone scores if every SHOWN block target is met (the dotted target curve) */
+function targetCurve(scored, targets) {
+  var a = scored.assessment, z = scored.zones, out = {};
+  function t(metric) { var x = targets.items.filter(function (i) { return i.metric === metric && i.shown; }); return x.length ? x[0] : null; }
+  function bump(id, metric) { return z[id].score === null || z[id].score === undefined ? null : clamp(z[id].score + (t(metric) && t(metric).expected > 0 ? 10 : 0), 1, 99); }
+  out.z1 = bump('z1', 'jump'); out.z3 = bump('z3', 'ana'); out.z6 = bump('z6', 'fiveK'); out.z7 = bump('z7', 'z2min');
+  var pu = t('pushups'); out.z4 = z.z4.score === null ? null : pu ? pushupPercentile(pu.target, a.sex) : z.z4.score;
+  var vt = t('vo2'); out.z5 = z.z5.score === null ? null : vt ? vo2Percentile(vt.vo2Target, a.age, a.sex) : z.z5.score;
+  var st = z.z2.strength, et = t('e1rm'), ht = t('hang');
+  var ss = st ? (et ? bandPosition(et.target / a.bw, LIFT_BANDS[a.lift || 'trapbar'][a.sex]).score : st.score) : null;
+  var gparts = [];
+  if (num(a.gripKg)) gparts.push(gripKgScore(a.gripKg, a.sex));
+  if (num(a.hangS)) gparts.push(hangScore(ht ? ht.target : a.hangS, a.age, a.sex));
+  out.z2 = mean([ss, gparts.length ? mean(gparts) : null]);
+  return out;
+}
+
+/* ---------- program generator: 12 weeks = 3 x 4-week blocks, week 4 = deload (-40% volume) ---------- */
+/* base week, day offsets 0..6 from the start date */
+var BASE_WEEK = [['strengthA'], ['z2'], ['vo2'], ['strengthB'], ['power'], ['z2long'], []];
+/* +1 session for each of the two weakest zones; candidate days in preference order */
+var EXTRA = {
+  z1: { s: 'powerB', days: [6, 0] }, z2: { s: 'strengthC', days: [6, 1] }, z3: { s: 'anaerobic', days: [6, 4] },
+  z4: { s: 'muscEnd', days: [6, 3] }, z5: { s: 'vo2B', days: [6, 3] }, z6: { s: 'lt', days: [6, 1] }, z7: { s: 'z2extra', days: [6, 3] }
+};
+var SESSION_META = {
+  strengthA: { type: 'strength', title: 'Strength A — heavy pull + push-up finisher' },
+  strengthB: { type: 'strength', title: 'Strength B — squat/press + grip' },
+  strengthC: { type: 'strength', title: 'Strength C — extra strength (weak zone)' },
+  vo2: { type: 'vo2', title: 'VO2max — 4 × 4 min' },
+  vo2B: { type: 'vo2', title: 'VO2max B — short intervals (weak zone)' },
+  z2: { type: 'z2', title: 'Zone 2' }, z2long: { type: 'z2', title: 'Zone 2 — long effort' }, z2extra: { type: 'z2', title: 'Zone 2 — extra (weak zone)' },
+  power: { type: 'power', title: 'Power — jumps + sprints' }, powerB: { type: 'power', title: 'Power B — jumps (weak zone)' },
+  anaerobic: { type: 'anaerobic', title: 'Anaerobic intervals (weak zone)' },
+  lt: { type: 'lt', title: 'Threshold — 3 × 10 min (weak zone)' },
+  muscEnd: { type: 'muscEnd', title: 'Muscular endurance circuit (weak zone)' }
+};
+var ENDURANCE_TYPES = { z2: 1, vo2: 1, lt: 1 }, FAST_TYPES = { power: 1, anaerobic: 1 };
+
+function buildWeekTemplate(weakest) {
+  var week = BASE_WEEK.map(function (d) { return d.slice(); }), usedExtraDay = {};
+  (weakest || []).forEach(function (zid) {
+    var ex = EXTRA[zid]; if (!ex) return;
+    var day = ex.days.filter(function (d) { return !usedExtraDay[d]; })[0];
+    if (day === undefined) day = ex.days[ex.days.length - 1];
+    usedExtraDay[day] = true; week[day].push(ex.s);
+  });
+  return week;
+}
+
+function lerp(a, b, p) { return a + (b - a) * p; }
+function paceStr(secPer, unit) { return fmtTime(secPer) + unit; }
+
+function sessionDose(id, ctx, wk) {
+  /* ctx: baseline + target values; wk: {index 0..11, block 1..3, inBlock 1..4, deload, p progress 0..1, z2Sessions} */
+  var a = ctx.a, d = [], p = wk.p, dl = wk.deload, notes = [];
+  var vol = function (n) { return dl ? Math.max(1, Math.round(n * 0.6)) : n; };
+  var meta = SESSION_META[id];
+  if (meta.type === 'strength') {
+    var scheme = [{ sets: 4, reps: 5, pct: 0.80 }, { sets: 4, reps: 5, pct: 0.825 }, { sets: 5, reps: 4, pct: 0.85 }, { sets: 3, reps: 4, pct: 0.80 }][wk.inBlock - 1];
+    if (id === 'strengthC') scheme = dl ? { sets: 2, reps: 3, pct: 0.80 } : { sets: 4, reps: 3, pct: 0.85 };
+    var lift = a.lift === 'squat' ? 'Back squat' : 'Trap-bar deadlift';
+    var other = a.lift === 'squat' ? 'Trap-bar deadlift' : 'Back squat';
+    if (ctx.e1rm) {
+      var e = lerp(ctx.e1rm, ctx.e1rmExpected, p), load = round(e * scheme.pct, 2.5);
+      if (id === 'strengthB') d.push(other + ': ' + vol(3) + ' × 5 @ RPE 7–8');
+      else d.push(lift + ': ' + scheme.sets + ' × ' + scheme.reps + ' @ ' + load + ' kg (~' + Math.round(scheme.pct * 100) + '% of est. 1RM ' + Math.round(e) + ' kg)');
+      if (id === 'strengthA' && wk.inBlock === 3) d.push('Rep-PR set: ' + a.liftKg + ' kg × as many clean reps as possible — target ≥ ' + (a.liftReps + wk.block) + ' (last test ' + a.liftReps + ')');
+    } else d.push(lift + ': ' + scheme.sets + ' × ' + scheme.reps + ' @ ~' + Math.round(scheme.pct * 100) + '% (enter a lift test for loads)');
+    if (id === 'strengthA') {
+      d.push('Bench press or weighted push-up: ' + vol(4) + ' × 5 @ RPE 8');
+      d.push('One-arm row: ' + vol(3) + ' × 8 each side');
+      d.push('Farmer carry: ' + vol(3) + ' × 40 m @ ' + round(a.bw * (a.sex === 'F' ? 0.75 : 1) / 2, 2) + ' kg per hand');
+      if (num(a.pushups) !== null) {
+        var pu = lerp(a.pushups, a.pushups + 2 * ctx.blocks, p);
+        d.push('Finisher — push-ups: ' + vol(3) + ' × ' + Math.max(1, Math.round(pu * 0.6)) + ' (60% of max), 90 s rest');
+      }
+    } else if (id === 'strengthB') {
+      d.push('Overhead press: ' + vol(4) + ' × 5 @ RPE 8');
+      d.push('Pull-ups (or lat pull): ' + vol(4) + ' × 5');
+      var hs = num(a.hangS) ? lerp(a.hangS, ctx.hangTarget, p) : hangTarget(a.age, a.sex) * 0.5;
+      d.push('Dead hang: ' + vol(3) + ' × ' + Math.max(10, Math.round(hs * 0.7)) + ' s');
+    } else {
+      d.push('Romanian deadlift: ' + vol(3) + ' × 6 @ RPE 7');
+      d.push('Split squat: ' + vol(3) + ' × 6 each leg');
+    }
+  } else if (id === 'vo2') {
+    var reps = dl ? 3 : 4;
+    if (ctx.vo2Mode === 'cooper12' && ctx.cooperM) {
+      var m = lerp(ctx.cooperM, ctx.cooperExpected, p), secPerKm = 720 / (m / 1000);
+      d.push(reps + ' × 4 min hard / 4 min easy jog — pace ' + paceStr(secPerKm * 1.05, '') + '–' + paceStr(secPerKm * 1.08, ' /km') + ' (12-min test pace ' + paceStr(secPerKm, ' /km') + ' + 5–8%)');
+    } else if (ctx.row2kS) {
+      var t2k = lerp(ctx.row2kS, ctx.row2kExpected, p), split = t2k / 4;
+      d.push(reps + ' × 4 min hard / 4 min easy row — split ' + paceStr(split * 1.05, '') + '–' + paceStr(split * 1.08, ' /500 m') + ' (2K split ' + paceStr(split, ' /500 m') + ' + 5–8%)');
+    } else d.push(reps + ' × 4 min hard / 4 min easy');
+    d.push('Effort: ~90–95% max heart rate by the end of each rep; all reps at the same pace');
+    d.push('Warm-up 10 min easy, cool-down 5–10 min');
+  } else if (id === 'vo2B') {
+    d.push((dl ? 4 : 6) + ' × 2 min at VO2 test pace / 2 min easy');
+    d.push('Warm-up 10 min easy');
+  } else if (meta.type === 'z2') {
+    var weekly = lerp(ctx.z2Min, ctx.z2Target, p) * (dl ? 0.6 : 1);
+    var longShare = id === 'z2long' ? Math.min(90 * (dl ? 0.6 : 1), Math.max(45, weekly * 0.4)) : null;
+    var others = wk.z2Sessions - 1, rest = weekly - Math.min(90, Math.max(45, weekly * 0.4)) * (dl ? 1 : 1);
+    var mins = id === 'z2long' ? longShare : clamp(others > 0 ? rest / others : weekly, dl ? 25 : 30, 60);
+    d.push(Math.round(mins / 5) * 5 + ' min at zone-2 pace (talk test: full sentences, nasal breathing possible)');
+    d.push('Weekly zone-2 target this week: ~' + Math.round(weekly / 5) * 5 + ' min');
+    if (id === 'z2long') d.push('Long effort: hike, ruck, bike or run — note your pace at the same effort to track the trend');
+  } else if (id === 'power' || id === 'powerB') {
+    d.push('Standing broad jump: ' + vol(5) + ' × 3, full rest (≥ 90 s), max intent');
+    d.push('Countermovement / box jump: ' + vol(3) + ' × 3');
+    if (id === 'power') d.push('Sprints: ' + vol(6) + ' × 20–40 m, walk-back rest (≥ 2 min)');
+    notes.push('Keep power work on its own day or ≥ 3 h away from endurance work.');
+  } else if (id === 'anaerobic') {
+    var half = num(a.anaS) ? lerp(a.anaS, ctx.anaExpected, p) / 2 : null, dist = a.anaMode === 'row500' ? '250 m row' : '200 m run';
+    d.push(vol(4) + ' × ' + dist + (half ? ' in ' + fmtTime(half * 1.03) + ' (test pace + 3%)' : ' hard') + ', 3–4 min easy between');
+    notes.push('Keep ≥ 3 h away from endurance work.');
+  } else if (id === 'lt') {
+    var k = num(a.fiveKS) ? lerp(a.fiveKS, ctx.fiveKExpected, p) / 5 : null;
+    d.push(vol(3) + ' × 10 min at threshold' + (k ? ' — ' + paceStr(k * 1.04, '') + '–' + paceStr(k * 1.08, ' /km') + ' (5K pace ' + paceStr(k, ' /km') + ' + 4–8%)' : '') + ', 2 min easy between');
+  } else if (id === 'muscEnd') {
+    var mx = num(a.pushups) !== null ? Math.round(lerp(a.pushups, a.pushups + 2 * ctx.blocks, p)) : 15;
+    d.push('Push-up ladder 1 → ' + Math.max(3, Math.round(mx * 0.4)) + ' → 1, rest as needed');
+    d.push('Walking lunges: ' + vol(3) + ' × 12 each leg · Plank: ' + vol(3) + ' × 45 s');
+  }
+  return { id: id, type: meta.type, title: meta.title, dose: d, notes: notes };
+}
+
+var STABILITY = { id: 'stability', type: 'stability', title: 'Stability — 10 min (daily, unscored)',
+  dose: ['Single-leg stand: 3 × 30 s each leg eyes open, 3 × 15 s eyes closed', 'Hip airplanes 2 × 5 each side · 90/90 hip switches 2 × 8 · Dead bug 2 × 8'], notes: [] };
+
+function programContext(history, targets, layoff) {
+  var a = history[history.length - 1], eff = effectiveBaseline(a, layoff);
+  function exp(metric) { var x = targets.items.filter(function (i) { return i.metric === metric; })[0]; return x ? x.target : null; }
+  var vt = targets.items.filter(function (i) { return i.metric === 'vo2'; })[0];
+  var ctx = { a: a, blocks: targets.blocks, e1rm: eff.e1rm, e1rmExpected: exp('e1rm') || eff.e1rm, hangTarget: exp('hang') || num(a.hangS),
+    anaExpected: exp('ana') || num(a.anaS), fiveKExpected: exp('fiveK') || num(a.fiveKS), vo2Mode: a.vo2Mode,
+    z2Min: num(a.z2Min) || 0, z2Target: exp('z2min') || 150 };
+  if (vt) {
+    if (a.vo2Mode === 'cooper12') { ctx.cooperM = vt.current; ctx.cooperExpected = vt.target; }
+    else { ctx.row2kS = vt.current; ctx.row2kExpected = vt.target; }
+  }
+  return ctx;
+}
+
+function generateProgram(history, weakest, startDate, layoff) {
+  var targets = blockTargets(history, 12, layoff), ctx = programContext(history, targets, layoff);
+  var tmpl = buildWeekTemplate(weakest), weeks = [];
+  var z2Sessions = tmpl.reduce(function (n, day) { return n + day.filter(function (s) { return SESSION_META[s].type === 'z2'; }).length; }, 0);
+  for (var w = 0; w < 12; w++) {
+    var block = Math.floor(w / 4) + 1, inBlock = (w % 4) + 1;
+    var wk = { index: w, block: block, inBlock: inBlock, deload: inBlock === 4, p: w / 11, z2Sessions: z2Sessions };
+    var days = [];
+    for (var d = 0; d < 7; d++) {
+      var date = addDays(startDate, w * 7 + d), sessions = tmpl[d].map(function (s) { return sessionDose(s, ctx, wk); });
+      var hasEnd = sessions.some(function (s) { return ENDURANCE_TYPES[s.type]; }), hasFast = sessions.some(function (s) { return FAST_TYPES[s.type]; });
+      if (hasEnd && hasFast) sessions.forEach(function (s) { if (FAST_TYPES[s.type]) s.notes.push('Same day as endurance work: do this first and separate them by ≥ 3 h.'); });
+      if (sessions.length > 1) sessions.slice(1).forEach(function (s) { s.notes.push('Second session today — AM/PM split.'); });
+      days.push({ date: date, sessions: sessions.concat([Object.assign({}, STABILITY)]) });
+    }
+    weeks.push({ n: w + 1, block: block, inBlock: inBlock, deload: wk.deload, days: days });
+  }
+  return { version: 1, createdAt: new Date().toISOString(), start: startDate, assessmentDate: history[history.length - 1].date,
+           weakest: weakest.slice(), template: tmpl, weeks: weeks };
+}
+function programDay(program, iso) {
+  if (!program) return null;
+  var i = daysBetween(program.start, iso);
+  if (i < 0 || i >= 84) return { outside: true, index: i };
+  var w = program.weeks[Math.floor(i / 7)];
+  return { week: w, day: w.days[i % 7], index: i };
+}
+function blockAdherence(program, log, iso) {
+  var pd = programDay(program, iso); if (!pd || pd.outside) return null;
+  var b = pd.week.block, planned = 0, done = 0, logged = {};
+  (log || []).forEach(function (l) { if (l.done) logged[l.date + '|' + l.sessionId] = true; });
+  program.weeks.filter(function (w) { return w.block === b; }).forEach(function (w) {
+    w.days.forEach(function (d) {
+      if (d.date > iso) return;
+      d.sessions.forEach(function (s) { if (s.type === 'stability') return; planned++; if (logged[d.date + '|' + s.id]) done++; });
+    });
+  });
+  return { block: b, planned: planned, done: done, pct: planned ? done / planned : null };
+}
+
+root.LMX = {
+  ZONES: ZONES, TIER_LABEL: TIER_LABEL, METRICS: METRICS, FRIEND: FRIEND,
+  parseTime: parseTime, fmtTime: fmtTime, addDays: addDays, daysBetween: daysBetween,
+  vo2FromRow2k: vo2FromRow2k, row2kFromVo2: row2kFromVo2, vo2FromCooper: vo2FromCooper, cooperFromVo2: cooperFromVo2, e1rm: e1rm,
+  vo2Percentile: vo2Percentile, pushupPercentile: pushupPercentile, percentileLabel: percentileLabel, gripBand: gripBand,
+  classifyChange: classifyChange, mdc: mdc, baselineScore: baselineScore, scoreHistory: scoreHistory,
+  vo2DetrainLoss: vo2DetrainLoss, strengthDetrainLoss: strengthDetrainLoss, effectiveBaseline: effectiveBaseline, layoffDays: layoffDays,
+  blockTargets: blockTargets, targetCurve: targetCurve, buildWeekTemplate: buildWeekTemplate,
+  generateProgram: generateProgram, programDay: programDay, blockAdherence: blockAdherence
+};
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
+<!-- ===================== UI ===================== -->
+<script>
+(function () {
+'use strict';
+var L = window.LMX, $app = document.getElementById('app');
+var KEYS = { profile: 'lmx.profile', assessments: 'lmx.assessments', program: 'lmx.program', log: 'lmx.log', layoff: 'lmx.layoff', settings: 'lmx.settings' };
+function load(k, dflt) { try { var v = localStorage.getItem(KEYS[k]); return v ? JSON.parse(v) : dflt; } catch (e) { return dflt; } }
+function save(k, v) { localStorage.setItem(KEYS[k], JSON.stringify(v)); }
+function esc(s) { return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function today() { var d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
+function history() { return load('assessments', []).slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.savedAt || '') < (b.savedAt || '') ? -1 : 1; }); }
+function weekday(iso) { return new Date(iso + 'T00:00:00Z').toLocaleDateString(undefined, { weekday: 'short', timeZone: 'UTC' }); }
+function nice(iso) { return new Date(iso + 'T00:00:00Z').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }); }
+function tierBadge(t) { return '<span class="badge t-' + t + '">' + esc(L.TIER_LABEL[t]) + '</span>'; }
+function chgText(c) { if (!c) return ''; var m = { improved: 'improved', declined: 'declined', noise: 'within noise', 'different test': 'different test — not comparable' }; return '<span class="chg-' + (c === 'different test' ? 'noise' : c) + '">' + m[c] + '</span>'; }
+function f1(v) { return v === null || v === undefined ? '—' : Math.round(v); }
+
+/* ---------------- Assess ---------------- */
+function viewAssess() {
+  var p = load('profile', {}), last = history().slice(-1)[0] || {};
+  var v = function (k, d) { return esc(last[k] !== undefined && last[k] !== null ? last[k] : d === undefined ? '' : d); };
+  var t = function (k) { return last[k] ? esc(L.fmtTime(last[k])) : ''; };
+  var sel = function (k, val, dflt) { return (last[k] || p[k] || dflt) === val ? ' selected' : ''; };
+  var fl = last.flags || {};
+  $app.innerHTML =
+  '<form id="f-assess">' +
+  '<div class="card"><h2>You</h2><div class="grid">' +
+    '<div><label for="age">Age</label><input id="age" name="age" type="number" min="18" max="90" required value="' + esc(p.age || '') + '"></div>' +
+    '<div><label for="sex">Sex (for norms)</label><select id="sex" name="sex"><option value="M"' + (p.sex !== 'F' ? ' selected' : '') + '>Male</option><option value="F"' + (p.sex === 'F' ? ' selected' : '') + '>Female</option></select></div>' +
+    '<div><label for="bw">Body weight (kg)</label><input id="bw" name="bw" type="number" step="0.1" min="30" max="250" required value="' + esc(p.bw || '') + '"></div>' +
+    '<div><label for="level">Lifting experience</label><select id="level" name="level"><option value="novice"' + (p.level === 'novice' ? ' selected' : '') + '>Novice (&lt; 1 yr)</option><option value="intermediate"' + (!p.level || p.level === 'intermediate' ? ' selected' : '') + '>Intermediate</option><option value="advanced"' + (p.level === 'advanced' ? ' selected' : '') + '>Advanced</option></select></div>' +
+    '<div><label for="date">Test date</label><input id="date" name="date" type="date" required value="' + today() + '"></div>' +
+  '</div></div>' +
+  '<div class="card"><h2>Seven field tests</h2><p class="mut">Times as m:ss (e.g. 7:12) or h:mm:ss. Use the same test each time — results from different tests are not compared.</p><div class="grid">' +
+    '<div><label for="jumpCm">1 · Standing broad jump, best of 3 (cm)</label><input id="jumpCm" name="jumpCm" type="number" min="30" max="400" required value="' + v('jumpCm') + '"></div>' +
+    '<div><label for="lift">2 · Strength lift</label><select id="lift" name="lift"><option value="trapbar"' + sel('lift', 'trapbar', 'trapbar') + '>Trap-bar deadlift</option><option value="squat"' + sel('lift', 'squat', 'trapbar') + '>Back squat</option></select></div>' +
+    '<div><label for="liftKg">2 · Load for the 5-rep set (kg)</label><input id="liftKg" name="liftKg" type="number" step="0.5" min="5" max="500" required value="' + v('liftKg') + '"></div>' +
+    '<div><label for="liftReps">2 · Reps done at that load (≤ 10)</label><input id="liftReps" name="liftReps" type="number" min="1" max="10" required value="' + v('liftReps', 5) + '"></div>' +
+    '<div><label for="hangS">2b · Dead hang (seconds)</label><input id="hangS" name="hangS" type="number" min="0" max="900" value="' + v('hangS') + '"></div>' +
+    '<div><label for="gripKg">2b · Grip dynamometer, best hand (kg, optional)</label><input id="gripKg" name="gripKg" type="number" step="0.5" min="0" max="150" value="' + v('gripKg') + '"></div>' +
+    '<div><label for="anaMode">3 · Anaerobic test</label><select id="anaMode" name="anaMode"><option value="run400"' + sel('anaMode', 'run400', 'run400') + '>400 m run, all-out</option><option value="row500"' + sel('anaMode', 'row500', 'run400') + '>500 m row, all-out</option></select></div>' +
+    '<div><label for="anaS">3 · Time (m:ss)</label><input id="anaS" name="anaS" required placeholder="1:15" value="' + t('anaS') + '"></div>' +
+    '<div><label for="pushups">4 · Push-ups to failure (reps)</label><input id="pushups" name="pushups" type="number" min="0" max="300" required value="' + v('pushups') + '"></div>' +
+    '<div><label for="vo2Mode">5 · VO2max test</label><select id="vo2Mode" name="vo2Mode"><option value="row2k"' + sel('vo2Mode', 'row2k', 'row2k') + '>2K row (Concept2)</option><option value="cooper12"' + sel('vo2Mode', 'cooper12', 'row2k') + '>12-min run (Cooper)</option></select></div>' +
+    '<div id="w-row2k"><label for="row2kS">5 · 2K row time (m:ss)</label><input id="row2kS" name="row2kS" placeholder="7:30" value="' + t('row2kS') + '"></div>' +
+    '<div id="w-cooper"><label for="cooperM">5 · Distance in 12 min (m)</label><input id="cooperM" name="cooperM" type="number" min="500" max="5000" value="' + v('cooperM') + '"></div>' +
+    '<div><label for="fiveKS">6 · 5K time trial (m:ss)</label><input id="fiveKS" name="fiveKS" required placeholder="24:30" value="' + t('fiveKS') + '"></div>' +
+    '<div><label for="z2Min">7 · Zone-2 minutes in a typical week</label><input id="z2Min" name="z2Min" type="number" min="0" max="2000" required value="' + v('z2Min') + '"></div>' +
+    '<div><label for="longPace">7 · Long-effort pace at talk-test effort (optional, e.g. 6:30 /km)</label><input id="longPace" name="longPace" value="' + v('longPace') + '"></div>' +
+  '</div></div>' +
+  '<div class="card"><h2>Test conditions</h2><p class="mut">Logged so a bad night or a hot day is not mistaken for lost fitness.</p><div class="row">' +
+    '<label class="chk"><input type="checkbox" name="fSleep"' + (fl.sleep ? ' checked' : '') + '> Slept &lt; 6 h</label>' +
+    '<label class="chk"><input type="checkbox" name="fCaffeine"' + (fl.caffeine ? ' checked' : '') + '> Caffeine before</label>' +
+    '<label class="chk"><input type="checkbox" name="fHeat"' + (fl.heat ? ' checked' : '') + '> Hot conditions</label>' +
+    '<label class="chk">Time of day <select name="fTod" style="width:auto"><option value="morning"' + (fl.tod === 'morning' ? ' selected' : '') + '>Morning</option><option value="afternoon"' + (fl.tod === 'afternoon' ? ' selected' : '') + '>Afternoon</option><option value="evening"' + (fl.tod === 'evening' ? ' selected' : '') + '>Evening</option></select></label>' +
+  '</div><h3 style="margin-top:.8rem">Quarterly balance check (pass/fail, unscored)</h3><div class="row">' +
+    '<label class="chk"><input type="checkbox" name="slsOpen"> Single-leg stand 30 s, eyes open</label>' +
+    '<label class="chk"><input type="checkbox" name="slsClosed"> Single-leg stand 15 s, eyes closed</label>' +
+  '</div></div>' +
+  '<div id="err" class="note hide"></div>' +
+  '<div class="row"><button type="submit" id="btn-score">Score my curve</button><span class="mut">Saved only in this browser.</span></div>' +
+  '</form>';
+  var mode = document.getElementById('vo2Mode');
+  function toggle() { document.getElementById('w-row2k').classList.toggle('hide', mode.value !== 'row2k'); document.getElementById('w-cooper').classList.toggle('hide', mode.value !== 'cooper12'); }
+  mode.addEventListener('change', toggle); toggle();
+  document.getElementById('f-assess').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var fd = new FormData(ev.target), g = function (k) { return fd.get(k); }, n = function (k) { var x = g(k); return x === '' || x === null ? null : Number(x); };
+    var a = {
+      date: g('date'), savedAt: new Date().toISOString(), age: n('age'), sex: g('sex'), bw: n('bw'), level: g('level'),
+      jumpCm: n('jumpCm'), lift: g('lift'), liftKg: n('liftKg'), liftReps: n('liftReps'), hangS: n('hangS'), gripKg: n('gripKg'),
+      anaMode: g('anaMode'), anaS: L.parseTime(g('anaS')), pushups: n('pushups'), vo2Mode: g('vo2Mode'),
+      row2kS: g('vo2Mode') === 'row2k' ? L.parseTime(g('row2kS')) : null, cooperM: g('vo2Mode') === 'cooper12' ? n('cooperM') : null,
+      fiveKS: L.parseTime(g('fiveKS')), z2Min: n('z2Min'), longPace: g('longPace') || '',
+      flags: { sleep: !!g('fSleep'), caffeine: !!g('fCaffeine'), heat: !!g('fHeat'), tod: g('fTod') },
+      sls: { open: !!g('slsOpen'), closed: !!g('slsClosed') }
+    };
+    var errs = [];
+    if (!a.anaS) errs.push('Anaerobic time must look like 1:15.');
+    if (!a.fiveKS) errs.push('5K time must look like 24:30.');
+    if (a.vo2Mode === 'row2k' && !a.row2kS) errs.push('Enter your 2K row time (m:ss).');
+    if (a.vo2Mode === 'cooper12' && !a.cooperM) errs.push('Enter the distance you ran in 12 minutes.');
+    var box = document.getElementById('err');
+    if (errs.length) { box.textContent = errs.join(' '); box.classList.remove('hide'); return; }
+    save('profile', { age: a.age, sex: a.sex, bw: a.bw, level: a.level });
+    var all = load('assessments', []); all.push(a); save('assessments', all);
+    location.hash = '#/curve';
+  });
+}
+
+/* ---------------- Curve SVG ---------------- */
+function curveSvg(cur, tgt, prev) {
+  var W = 720, H = 300, pl = 44, pr = 48, pt = 16, pb = 58, iw = W - pl - pr, ih = H - pt - pb;
+  var x = function (i) { return pl + iw * i / 6; }, y = function (s) { return pt + ih * (1 - s / 100); };
+  function pts(obj) { return L.ZONES.map(function (z, i) { var s = obj[z.id]; return s === null || s === undefined ? null : [x(i), y(s)]; }); }
+  function line(pp) { var d = '', pen = false; pp.forEach(function (p) { if (!p) { pen = false; return; } d += (pen ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ' '; pen = true; }); return d; }
+  var c = pts(cur), g = '';
+  [0, 25, 50, 75, 100].forEach(function (s) { g += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y(s) + '" y2="' + y(s) + '" stroke="#e5e7eb"/><text x="' + (pl - 6) + '" y="' + (y(s) + 4) + '" font-size="11" text-anchor="end" fill="#6b7280">' + s + '</text>'; });
+  var cc = c.filter(Boolean), area = cc.length > 1 ? 'M' + cc[0][0] + ' ' + y(0) + ' ' + cc.map(function (p) { return 'L' + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ') + ' L' + cc[cc.length - 1][0] + ' ' + y(0) + ' Z' : '';
+  var labels = L.ZONES.map(function (z, i) { return '<text x="' + x(i) + '" y="' + (H - pb + 18) + '" font-size="11.5" text-anchor="middle" fill="#111827">' + esc(z.short) + '</text><text x="' + x(i) + '" y="' + (H - pb + 32) + '" font-size="10" text-anchor="middle" fill="#6b7280">zone ' + z.n + '</text>'; }).join('');
+  var dots = c.map(function (p, i) { return p ? '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4.5" fill="#0f766e"/><text x="' + p[0] + '" y="' + (p[1] - 9) + '" font-size="11" text-anchor="middle" fill="#0f766e" font-weight="700">' + Math.round(cur[L.ZONES[i].id]) + '</text>' : ''; }).join('');
+  return '<svg id="curve-svg" viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Seven-zone fitness curve">' + g +
+    (area ? '<path d="' + area + '" fill="#14b8a6" fill-opacity=".14"/>' : '') +
+    (prev ? '<path d="' + line(pts(prev)) + '" fill="none" stroke="#94a3b8" stroke-width="1.5"/>' : '') +
+    (tgt ? '<path id="target-line" d="' + line(pts(tgt)) + '" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="5 5"/>' : '') +
+    '<path d="' + line(c) + '" fill="none" stroke="#0f766e" stroke-width="2.5"/>' + dots + labels +
+    '<text x="' + (W - pr) + '" y="' + (H - 6) + '" font-size="10.5" text-anchor="end" fill="#6b7280">short &amp; hard → long &amp; easy</text></svg>' +
+    '<div class="row mut" style="font-size:.8rem"><span style="color:#0f766e">━ now</span><span style="color:#7c3aed">┅ block target</span>' + (prev ? '<span style="color:#94a3b8">━ previous test</span>' : '') + '</div>';
+}
+
+/* ---------------- Curve & targets ---------------- */
+function viewCurve() {
+  var h = history();
+  if (!h.length) { $app.innerHTML = '<div class="card"><h2>No tests yet</h2><p>Enter your seven field tests first.</p><a href="#/assess"><button>Enter tests</button></a></div>'; return; }
+  var st = load('settings', {}), weeks = st.blockWeeks || 12, layoff = load('layoff', null);
+  var sc = L.scoreHistory(h), tg = L.blockTargets(h, weeks, layoff), tc = L.targetCurve(sc, tg);
+  var prevScores = null;
+  if (h.length > 1) { var ps = L.scoreHistory(h.slice(0, -1)); prevScores = {}; L.ZONES.forEach(function (z) { prevScores[z.id] = ps.zones[z.id].score; }); }
+  var cur = {}; L.ZONES.forEach(function (z) { cur[z.id] = sc.zones[z.id].score; });
+  var a = sc.assessment, weakNames = sc.weakest.map(function (id) { return L.ZONES.filter(function (z) { return z.id === id; })[0].name; });
+  var det = tg.detraining;
+  var zoneCards = L.ZONES.map(function (z) {
+    var r = sc.zones[z.id], weak = sc.weakest.indexOf(z.id) >= 0;
+    var ch = r.changes.filter(function (c) { return c[1]; }).map(function (c) { return L.METRICS[c[0]].label + ': ' + chgText(c[1]); }).join(' · ');
+    return '<div class="zcard' + (weak ? ' weak' : '') + '" data-zone="' + z.id + '"><div class="row" style="justify-content:space-between"><strong>' + z.n + ' · ' + esc(z.name) + '</strong>' + tierBadge(z.tier) + (z.id === 'z2' ? ' ' + tierBadge('strong') + '<span class="mut" style="font-size:.7rem">grip</span>' : '') + '</div>' +
+      '<div class="row"><span class="score">' + f1(r.score) + '</span><span class="mut">/ 100 · ' + esc(z.basis) + (weak ? ' · <b style="color:#b45309">weakest</b>' : '') + '</span></div>' +
+      '<div class="mut">' + esc(r.detail || 'not tested') + '</div>' + (ch ? '<div style="font-size:.82rem">' + ch + '</div>' : '') + '</div>';
+  }).join('');
+  var rows = tg.items.map(function (t) {
+    var tgtCell = t.shown ? '<b>' + esc(t.fmt(t.target)) + '</b> ' + esc(t.unit) : '<span class="mut">↑ trend only — expected change is inside test noise</span>';
+    return '<tr data-metric="' + t.metric + '"><td>' + esc(L.ZONES.filter(function (z) { return z.id === t.zone; })[0].short) + '</td><td>' + esc(t.label) + '</td><td>' + esc(t.fmt(t.current)) + ' ' + esc(t.unit) + '</td><td>' + tgtCell + '</td><td class="mut">' + esc(t.why) + '</td></tr>';
+  }).join('');
+  $app.innerHTML =
+    '<div class="card"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h2>Your fitness curve</h2><div class="mut">Test of ' + esc(nice(a.date)) + ' · age ' + a.age + ' · ' + (a.sex === 'F' ? 'female' : 'male') + ' · ' + a.bw + ' kg</div></div>' +
+      '<div style="text-align:right"><div class="mut">Composite (area under the curve)</div><div class="big" id="composite">' + f1(sc.composite) + '</div><div class="mut" style="font-size:.75rem">evidence-weighted: VO2max ×3, strength ×2, grip ×2, others ×1</div></div></div>' +
+      curveSvg(cur, tc, prevScores) +
+      '<p id="weakest"><b>Weakest zones:</b> ' + esc(weakNames.join(' and ')) + ' — the program adds one extra session for each.</p>' +
+      (sc.flagsDiffer ? '<div class="note">Test conditions (sleep, caffeine, heat or time of day) differed from your previous test — treat changes with care.</div>' : '') +
+      (det.days ? '<div class="note">Layoff of ' + det.days + ' days applied to your baselines: VO2max −' + (det.vo2Loss * 100).toFixed(1) + '%, strength −' + (det.strengthLoss * 100).toFixed(1) + '%. Regaining usually takes about half the layoff time.</div>' : '') +
+    '</div>' +
+    '<div class="card"><h2>Zones</h2><div class="grid">' + zoneCards + '</div><p class="mut" style="margin-top:.6rem">Scores: percentile where published norms exist (VO2max, push-ups), band position for strength and grip, and own-baseline progress elsewhere (first test = 50, +10 for each improvement bigger than the test\'s noise).</p></div>' +
+    '<div class="card"><div class="row" style="justify-content:space-between"><h2>Block targets</h2><label class="chk">Block length <select id="blockWeeks" style="width:auto"><option value="8"' + (weeks === 8 ? ' selected' : '') + '>8 weeks</option><option value="12"' + (weeks === 12 ? ' selected' : '') + '>12 weeks</option></select></label></div>' +
+      '<p class="mut">A number is shown only when the expected change is bigger than the test\'s noise; otherwise you get a trend arrow and the per-session dose walks you toward it.</p>' +
+      '<table id="targets"><thead><tr><th>Zone</th><th>Test</th><th>Now</th><th>Target in ' + weeks + ' wk</th><th>Basis</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="row"><button id="btn-gen">' + (load('program', null) ? 'Regenerate 12-week program from this test' : 'Generate my 12-week program') + '</button><a href="#/assess"><button class="sec" type="button">Enter a new test</button></a></div>';
+  document.getElementById('blockWeeks').addEventListener('change', function (e) { var s = load('settings', {}); s.blockWeeks = Number(e.target.value); save('settings', s); viewCurve(); });
+  document.getElementById('btn-gen').addEventListener('click', function () {
+    if (load('program', null) && !confirm('Replace your current program? Your session log is kept.')) return;
+    save('program', L.generateProgram(h, sc.weakest, today(), layoff)); location.hash = '#/today';
+  });
+}
+
+/* ---------------- Program ---------------- */
+function viewProgram() {
+  var p = load('program', null);
+  if (!p) { $app.innerHTML = '<div class="card"><h2>No program yet</h2><p>Score your curve, then generate a program.</p><a href="#/curve"><button>Go to my curve</button></a></div>'; return; }
+  var t = today(), log = load('log', []), done = {};
+  log.forEach(function (l) { if (l.done) done[l.date + '|' + l.sessionId] = true; });
+  var weakNames = p.weakest.map(function (id) { return L.ZONES.filter(function (z) { return z.id === id; })[0].short; }).join(' + ');
+  var weeksHtml = p.weeks.map(function (w) {
+    return '<div style="margin:.6rem 0"><div class="row"><strong>Week ' + w.n + '</strong><span class="mut">Block ' + w.block + ' · week ' + w.inBlock + (w.deload ? ' · <b>deload (−40% volume)</b>' : '') + '</span></div><div class="wk">' +
+      w.days.map(function (d) {
+        return '<a class="day' + (d.date === t ? ' today' : '') + (w.deload ? ' deload' : '') + '" href="#/today/' + d.date + '" style="color:inherit;text-decoration:none"><div class="mut">' + esc(weekday(d.date)) + ' ' + d.date.slice(5) + '</div>' +
+          d.sessions.filter(function (s) { return s.type !== 'stability'; }).map(function (s) { return '<span class="pill s-' + s.type + (done[d.date + '|' + s.id] ? ' done' : '') + '">' + esc(s.title.split(' — ')[0]) + '</span>'; }).join('') +
+          (d.sessions.length === 1 ? '<span class="mut">Rest + stability</span>' : '') + '</a>';
+      }).join('') + '</div></div>';
+  }).join('');
+  $app.innerHTML = '<div class="card"><h2>12-week program</h2><p class="mut">Starts ' + esc(nice(p.start)) + ' · built from the test of ' + esc(nice(p.assessmentDate)) + ' · extra sessions for ' + esc(weakNames) + '. Three 4-week blocks; week 4 of each is a deload. 10 minutes of stability work every day. Tap a day for its doses.</p>' + weeksHtml + '</div>';
+}
+
+/* ---------------- Today (dose + logger) ---------------- */
+function viewToday(dateArg) {
+  var p = load('program', null), t = dateArg || today();
+  if (!p) { $app.innerHTML = '<div class="card"><h2>No program yet</h2><p>Generate a program from your curve first.</p><a href="#/curve"><button>Go to my curve</button></a></div>'; return; }
+  var pd = L.programDay(p, t);
+  if (pd.outside) { $app.innerHTML = '<div class="card"><h2>' + esc(nice(t)) + '</h2><p>' + (pd.index < 0 ? 'Your program starts on ' + esc(nice(p.start)) + '.' : 'Your 12-week program is finished — retest and generate the next one.') + '</p><a href="#/assess"><button>Retest</button></a></div>'; return; }
+  var log = load('log', []), adh = L.blockAdherence(p, log, t > today() ? today() : t);
+  function entry(sid) { return log.filter(function (l) { return l.date === t && l.sessionId === sid; })[0]; }
+  var cards = pd.day.sessions.map(function (s) {
+    var e = entry(s.id) || {};
+    return '<div class="card session" data-session="' + s.id + '"><div class="row" style="justify-content:space-between"><h3><span class="pill s-' + s.type + '" style="display:inline-block">' + esc(s.type) + '</span> ' + esc(s.title) + '</h3>' + (e.done ? '<span class="chg-improved">✓ logged</span>' : '') + '</div>' +
+      '<ul class="dose">' + s.dose.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' +
+      (s.notes.length ? '<div class="mut">' + s.notes.map(esc).join(' ') + '</div>' : '') +
+      '<form class="logf" data-sid="' + s.id + '" style="margin-top:.5rem"><div class="grid">' +
+        '<div><label>What you did (loads, splits, minutes)</label><input name="actual" value="' + esc(e.actual || '') + '"></div>' +
+        '<div><label>Effort 1–10 (RPE)</label><input name="rpe" type="number" min="1" max="10" value="' + esc(e.rpe || '') + '"></div>' +
+        '<div><label>Notes</label><input name="note" value="' + esc(e.note || '') + '"></div>' +
+      '</div><div class="row" style="margin-top:.5rem"><button type="submit">' + (e.done ? 'Update log' : 'Log as done') + '</button>' + (e.done ? '<button type="button" class="sec" data-undo="' + s.id + '">Undo</button>' : '') + '</div></form></div>';
+  }).join('');
+  $app.innerHTML = '<div class="card"><div class="row" style="justify-content:space-between"><div><h2 id="today-title">' + esc(nice(t)) + (t === today() ? ' — today' : '') + '</h2><div class="mut">Week ' + pd.week.n + ' · block ' + pd.week.block + ' week ' + pd.week.inBlock + (pd.week.deload ? ' · deload week' : '') + '</div></div>' +
+    (adh && adh.planned ? '<div class="mut" id="adherence">Block ' + adh.block + ' so far: ' + adh.done + ' / ' + adh.planned + ' sessions done (' + Math.round(adh.pct * 100) + '%)</div>' : '') +
+    '<div class="row"><a href="#/today/' + L.addDays(t, -1) + '"><button class="sec" type="button">← Prev</button></a><a href="#/today"><button class="sec" type="button">Today</button></a><a href="#/today/' + L.addDays(t, 1) + '"><button class="sec" type="button">Next →</button></a></div></div>' +
+    '<p class="mut">Doses walk from your last test toward your block targets. No workout gives a VO2max number — that only comes from a retest.</p></div>' + cards;
+  Array.prototype.forEach.call(document.querySelectorAll('form.logf'), function (f) {
+    f.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var fd = new FormData(f), sid = f.getAttribute('data-sid'), s = pd.day.sessions.filter(function (x) { return x.id === sid; })[0];
+      var all = load('log', []).filter(function (l) { return !(l.date === t && l.sessionId === sid); });
+      all.push({ date: t, sessionId: sid, title: s.title, type: s.type, done: true, actual: fd.get('actual'), rpe: fd.get('rpe') ? Number(fd.get('rpe')) : null, note: fd.get('note'), loggedAt: new Date().toISOString() });
+      save('log', all); viewToday(dateArg);
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-undo]'), function (b) {
+    b.addEventListener('click', function () { var sid = b.getAttribute('data-undo'); save('log', load('log', []).filter(function (l) { return !(l.date === t && l.sessionId === sid); })); viewToday(dateArg); });
+  });
+}
+
+/* ---------------- History & data ---------------- */
+function viewHistory() {
+  var h = history(), log = load('log', []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; }), lay = load('layoff', {}) || {};
+  var rows = h.map(function (a, i) {
+    var sc = L.scoreHistory(h.slice(0, i + 1));
+    return '<tr><td>' + esc(a.date) + '</td><td><b>' + f1(sc.composite) + '</b></td>' + L.ZONES.map(function (z) { return '<td>' + f1(sc.zones[z.id].score) + '</td>'; }).join('') +
+      '<td class="mut">' + [a.flags && a.flags.sleep ? 'sleep<6h' : '', a.flags && a.flags.caffeine ? 'caffeine' : '', a.flags && a.flags.heat ? 'heat' : '', a.flags ? a.flags.tod : '', a.sls ? 'SLS ' + (a.sls.open ? '✓' : '✗') + '/' + (a.sls.closed ? '✓' : '✗') : ''].filter(Boolean).join(', ') +
+      '</td><td><button class="danger" data-del="' + esc(a.savedAt || a.date) + '" type="button">Delete</button></td></tr>';
+  }).join('');
+  $app.innerHTML =
+    '<div class="card"><h2>Test history</h2>' + (h.length ? '<div style="overflow-x:auto"><table id="hist"><thead><tr><th>Date</th><th>Composite</th>' + L.ZONES.map(function (z) { return '<th>' + esc(z.short) + '</th>'; }).join('') + '<th>Conditions</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="mut">No tests yet.</p>') + '</div>' +
+    '<div class="card"><h2>Layoff (detraining)</h2><p class="mut">Time off since your last test lowers the baselines your targets and doses use (VO2max about −2.3%/week for 3 weeks, levelling at −16%; strength holds about 4 weeks). Your stored results are not changed.</p>' +
+      '<form id="f-layoff" class="row"><label>From <input type="date" name="start" value="' + esc(lay.start || '') + '"></label><label>To <input type="date" name="end" value="' + esc(lay.end || '') + '"></label><button type="submit">Save layoff</button><button type="button" class="sec" id="clr-layoff">Clear</button></form></div>' +
+    '<div class="card"><h2>Session log</h2>' + (log.length ? '<table id="logt"><thead><tr><th>Date</th><th>Session</th><th>Done</th><th>RPE</th><th>Notes</th></tr></thead><tbody>' + log.map(function (l) { return '<tr><td>' + esc(l.date) + '</td><td>' + esc(l.title) + '</td><td>' + esc(l.actual || '✓') + '</td><td>' + esc(l.rpe || '') + '</td><td>' + esc(l.note || '') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="mut">Nothing logged yet.</p>') + '</div>' +
+    '<div class="card"><h2>Your data</h2><p class="mut">Everything lives in this browser only. Export a backup file to move it or keep it safe.</p><div class="row"><button id="btn-export" type="button">Export backup (JSON)</button><label class="chk"><span>Import backup</span><input type="file" id="imp" accept="application/json,.json"></label><button class="danger" id="btn-wipe" type="button">Erase all data</button></div><div id="imp-msg" class="mut"></div></div>';
+  Array.prototype.forEach.call(document.querySelectorAll('[data-del]'), function (b) {
+    b.addEventListener('click', function () { if (!confirm('Delete this test?')) return; var k = b.getAttribute('data-del'); save('assessments', load('assessments', []).filter(function (a) { return (a.savedAt || a.date) !== k; })); viewHistory(); });
+  });
+  document.getElementById('f-layoff').addEventListener('submit', function (ev) {
+    ev.preventDefault(); var fd = new FormData(ev.target);
+    if (!fd.get('start') || !fd.get('end') || fd.get('end') < fd.get('start')) { alert('Pick a start date and an end date after it.'); return; }
+    save('layoff', { start: fd.get('start'), end: fd.get('end') }); viewHistory();
+  });
+  document.getElementById('clr-layoff').addEventListener('click', function () { localStorage.removeItem(KEYS.layoff); viewHistory(); });
+  document.getElementById('btn-export').addEventListener('click', function () {
+    var data = {}; Object.keys(KEYS).forEach(function (k) { data[k] = load(k, null); });
+    var blob = new Blob([JSON.stringify({ app: 'longevitymaxxing', version: 1, exportedAt: new Date().toISOString(), data: data }, null, 2)], { type: 'application/json' });
+    var u = URL.createObjectURL(blob), aEl = document.createElement('a'); aEl.href = u; aEl.download = 'longevitymaxxing-' + today() + '.json'; document.body.appendChild(aEl); aEl.click(); aEl.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 1000);
+  });
+  document.getElementById('imp').addEventListener('change', function (ev) {
+    var file = ev.target.files[0]; if (!file) return;
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var j = JSON.parse(r.result); if (j.app !== 'longevitymaxxing' || !j.data) throw new Error('not a LongevityMaxxing backup');
+        if (!confirm('Replace the data in this browser with this backup?')) return;
+        Object.keys(KEYS).forEach(function (k) { if (j.data[k] === null || j.data[k] === undefined) localStorage.removeItem(KEYS[k]); else save(k, j.data[k]); });
+        viewHistory(); document.getElementById('imp-msg').textContent = 'Backup restored.';
+      } catch (e) { document.getElementById('imp-msg').textContent = 'Could not import: ' + e.message; }
+    };
+    r.readAsText(file);
+  });
+  document.getElementById('btn-wipe').addEventListener('click', function () { if (!confirm('Erase all LongevityMaxxing data in this browser?')) return; Object.keys(KEYS).forEach(function (k) { localStorage.removeItem(KEYS[k]); }); viewHistory(); });
+}
+
+/* ---------------- router ---------------- */
+function route() {
+  var parts = (location.hash || '').replace(/^#\/?/, '').split('/'), r = parts[0] || (history().length ? (load('program', null) ? 'today' : 'curve') : 'assess');
+  Array.prototype.forEach.call(document.querySelectorAll('#nav a'), function (a) { a.classList.toggle('on', a.getAttribute('data-r') === r); });
+  ({ assess: viewAssess, curve: viewCurve, program: viewProgram, today: function () { viewToday(/^\d{4}-\d{2}-\d{2}$/.test(parts[1] || '') ? parts[1] : null); }, history: viewHistory }[r] || viewAssess)();
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+route();
+})();
+</script>
 </body>
 </html>
