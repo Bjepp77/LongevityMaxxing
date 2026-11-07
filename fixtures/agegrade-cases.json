@@ -1,0 +1,98 @@
+[
+ {
+  "event": "60m",
+  "sex": "M",
+  "age": 44,
+  "seconds": 8.2,
+  "factor": 0.9574,
+  "pct": 80.757
+ },
+ {
+  "event": "60m",
+  "sex": "F",
+  "age": 52,
+  "seconds": 9.8,
+  "factor": 0.9122,
+  "pct": 77.409
+ },
+ {
+  "event": "60m",
+  "sex": "M",
+  "age": 70,
+  "seconds": 10.4,
+  "factor": 0.8228,
+  "pct": 74.09
+ },
+ {
+  "event": "400m",
+  "sex": "M",
+  "age": 44,
+  "seconds": 62.0,
+  "factor": 0.9269,
+  "pct": 74.877
+ },
+ {
+  "event": "400m",
+  "sex": "F",
+  "age": 38,
+  "seconds": 75.0,
+  "factor": 0.958,
+  "pct": 66.249
+ },
+ {
+  "event": "5km",
+  "sex": "M",
+  "age": 44,
+  "seconds": 1500,
+  "factor": 0.9195,
+  "pct": 55.755
+ },
+ {
+  "event": "5km",
+  "sex": "F",
+  "age": 61,
+  "seconds": 1800,
+  "factor": 0.7524,
+  "pct": 61.581
+ },
+ {
+  "event": "10km",
+  "sex": "M",
+  "age": 44,
+  "seconds": 3000,
+  "factor": 0.9336,
+  "pct": 56.555
+ },
+ {
+  "event": "10km",
+  "sex": "F",
+  "age": 35,
+  "seconds": 2700,
+  "factor": 0.9857,
+  "pct": 64.853
+ },
+ {
+  "event": "half",
+  "sex": "M",
+  "age": 55,
+  "seconds": 6000,
+  "factor": 0.8471,
+  "pct": 67.898
+ },
+ {
+  "event": "half",
+  "sex": "F",
+  "age": 70,
+  "seconds": 8400,
+  "factor": 0.6683,
+  "pct": 67.193
+ },
+ {
+  "event": "60m",
+  "sex": "M",
+  "age": 29,
+  "seconds": 8.0,
+  "factor": 1.0,
+  "pct": 79.25
+ }
+]
