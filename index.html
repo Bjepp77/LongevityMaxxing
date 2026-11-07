@@ -139,6 +139,9 @@ var BAND_SCORES = [20, 40, 60, 80, 95];
 var GRIP = { M: { weak: 32, strong: 55.3 }, F: { weak: 19, strong: 32.7 } };
 var BROAD_JUMP_REF = { M: 203, F: 165 };   /* Bergeron over-40 standard, reference only */
 
+/* Ages whose norms are fully source-checked (FRIEND VO2max, Cooper push-ups). */
+var CHECKED_NORM_AGE_MIN = 40, CHECKED_NORM_AGE_MAX = 49;
+function outsideCheckedNormAges(age) { return age < CHECKED_NORM_AGE_MIN || age > CHECKED_NORM_AGE_MAX; }
 function ageBand(age) { return clamp(Math.floor(age / 10) - 2, 0, 5); }
 function pctFromPoints(v, vals, pcts) {
   var n = vals.length, slope;
@@ -271,11 +274,11 @@ function scoreHistory(history) {
   var b3 = baselineScore(history, 'ana');
   out.z3 = { score: b3 && b3.score, detail: mv.ana.v ? fmtTime(mv.ana.v) + (a.anaMode === 'row500' ? ' (500 m row)' : ' (400 m run)') : null, changes: [['ana', change('ana')]], tie: 1 };
   var pp = mv.pushups.v !== null ? pushupPercentile(mv.pushups.v, a.sex) : null;
-  out.z4 = { score: pp, pct: pp, detail: mv.pushups.v !== null ? mv.pushups.v + ' reps · P' + Math.round(pp) + ' · ' + percentileLabel(pp) + (a.age < 40 || a.age > 49 ? ' (40–49 norms; none published for your age here)' : '') : null,
+  out.z4 = { score: pp, pct: pp, detail: mv.pushups.v !== null ? mv.pushups.v + ' reps · P' + Math.round(pp) + ' · ' + percentileLabel(pp) + (outsideCheckedNormAges(a.age) ? ' (40–49 norms; none published for your age here)' : '') : null,
              changes: [['pushups', change('pushups')]], tie: 1 };
   var vp = mv.vo2.v !== null ? vo2Percentile(mv.vo2.v, a.age, a.sex) : null;
   out.z5 = { score: vp, pct: vp, vo2: mv.vo2.v,
-             detail: mv.vo2.v !== null ? 'est. ' + mv.vo2.v.toFixed(1) + ' mL/kg/min · P' + Math.round(vp) + ' · ' + percentileLabel(vp) : null,
+             detail: mv.vo2.v !== null ? 'est. ' + mv.vo2.v.toFixed(1) + ' mL/kg/min · P' + Math.round(vp) + ' · ' + percentileLabel(vp) + (outsideCheckedNormAges(a.age) ? ' (estimated: only the median is checked against the source for your age)' : '') : null,
              changes: [['vo2', change('vo2')]], tie: 1 };
   var b6 = baselineScore(history, 'fiveK');
   out.z6 = { score: b6 && b6.score, detail: mv.fiveK.v ? fmtTime(mv.fiveK.v) + ' 5K' : null, changes: [['fiveK', change('fiveK')]], tie: 1 };
