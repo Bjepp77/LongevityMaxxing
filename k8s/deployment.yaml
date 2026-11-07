@@ -8,6 +8,11 @@ metadata:
     managed-by: colossus
 spec:
   replicas: 1
+  # Recreate (NOT the default RollingUpdate): the per-project namespace has a hard
+  # memory ResourceQuota. A RollingUpdate creates the new pod before terminating the
+  # old one, transiently needing 2x the pod's memory — which the quota denies, so the
+  # rollout stalls with ProgressDeadlineExceeded. Kill-before-create is correct for a
+  # single-replica staging app (a few seconds of downtime is acceptable).
   strategy:
     type: Recreate
   selector:
