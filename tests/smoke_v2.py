@@ -15,7 +15,7 @@ from playwright.sync_api import expect, sync_playwright
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 FIXTURES = ROOT / 'fixtures'
 RAW_MARKERS = ['Activity ID', 'Workout Name', 'Ridge hike', 'Track 1500 hard', 'Commute ride', 'comma decimal']
-EXPECTED_MUST_TEST = ['z4', 'z3', 'z2', 'z1']   # nearest on the curve to a weakest proxy in z5..z7
+EXPECTED_MUST_TEST = ['hike', 'ana', 'sprint', 'power']   # nearest on the v2.1 curve to the weakest proxy (aer)
 REAL_FIVE_K = '22:30'
 
 
@@ -50,7 +50,7 @@ def check_placements(page) -> None:
     """Three labelled proxy cards, e1RM table, unmapped bucket, four must-test prompts in order."""
     cards = page.locator('.proxy-card')
     expect(cards).to_have_count(3)
-    for zone, band in (('z6', '±8%'), ('z7', '±5%'), ('z5', '±20%')):
+    for zone, band in (('thr', '±8%'), ('aer', '±5%'), ('vo2', '±20%')):
         label = page.locator('.proxy-card[data-zone=%s] .proxy-label' % zone)
         expect(label).to_have_text('Estimated from your log, %s, provisional until tested' % band)
     assert page.locator('.proxy-dot').count() == 3, 'hollow proxy points on the curve'
@@ -88,9 +88,9 @@ def enter_real_threshold(page, clicked: list) -> str:
     page.click('#btn-score')
     clicked.append('enter real 5K %s + Score my curve' % REAL_FIVE_K)
     expect(page.locator('#targets')).to_be_visible()
-    expect(page.locator('.zcard[data-zone=z6] .proxy-label')).to_have_count(0)
-    expect(page.locator('.zcard[data-zone=z5] .proxy-label')).to_have_count(1)
-    expect(page.locator('.zcard[data-zone=z7] .proxy-label')).to_have_count(1)
+    expect(page.locator('.zcard[data-zone=thr] .proxy-label')).to_have_count(0)
+    expect(page.locator('.zcard[data-zone=vo2] .proxy-label')).to_have_count(1)
+    expect(page.locator('.zcard[data-zone=aer] .proxy-label')).to_have_count(1)
     return page.locator('#targets').inner_html() + '|' + page.locator('#composite').inner_text()
 
 
@@ -116,8 +116,8 @@ def main() -> None:
         check_no_raw(page)
         with_import = enter_real_threshold(page, clicked)
         page.goto(url + '/#/import')
-        expect(page.locator('.proxy-card[data-zone=z6] .proxy-label')).to_have_count(0)
-        expect(page.locator('.proxy-card[data-zone=z6]')).to_contain_text('Replaced by your real test')
+        expect(page.locator('.proxy-card[data-zone=thr] .proxy-label')).to_have_count(0)
+        expect(page.locator('.proxy-card[data-zone=thr]')).to_contain_text('Replaced by your real test')
         meta = json.loads(storage(page)['lmx.import.meta'])
         assert meta['used'] is True and meta['firstRealTestAfterImport'], meta
         page.goto(url + '/#/history')
