@@ -764,6 +764,67 @@ function mustTestOrder(weakest) {
   return MUST_TEST.slice().sort(function (a, b) { var da = Math.abs(Number(a.slice(1)) - n), db = Math.abs(Number(b.slice(1)) - n); return da - db || (a < b ? -1 : 1); });
 }
 
+/* Age-grade data (docs/SPEC.md v2.1 (b)). 60 m / 400 m: WMA 2023 Appendix B one-year factors; 5 km / 10 km / half: USATF MLDR 2025 road
+   tables (Alan Jones, CC0). Rows = single ages 30..90. Open standards: road = table OC; track = senior world record (assumption, see SPEC). */
+var AGE_GRADE_MIN_AGE = 30, AGE_GRADE_MAX_AGE = 90;
+var AGE_GRADE_OPEN = {"60m": {"M": 6.34, "F": 6.92}, "400m": {"M": 43.03, "F": 47.6}, "5km": {"M": 769, "F": 834}, "10km": {"M": 1584, "F": 1726}, "half": {"M": 3451, "F": 3772}};
+var AGE_GRADE_FACTORS = {
+  '60m': {
+    M: [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 0.9991, 0.9946, 0.9901, 0.9855, 0.9809, 0.9763, 0.9716, 0.9669, 0.9622, 0.9574, 0.9526, 0.9478, 0.9429, 0.9380, 0.9331, 0.9281, 0.9232, 0.9181, 0.9131, 0.9080, 0.9029, 0.8978, 0.8926, 0.8874, 0.8822, 0.8769, 0.8716, 0.8663, 0.8610, 0.8556, 0.8502, 0.8448, 0.8393, 0.8338, 0.8283, 0.8228, 0.8172, 0.8116, 0.8060, 0.8003, 0.7946, 0.7889, 0.7832, 0.7774, 0.7716, 0.7658, 0.7593, 0.7521, 0.7442, 0.7357, 0.7264, 0.7164, 0.7058, 0.6944, 0.6824, 0.6696],
+    F: [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 0.9985, 0.9909, 0.9834, 0.9760, 0.9686, 0.9613, 0.9541, 0.9469, 0.9398, 0.9328, 0.9259, 0.9190, 0.9122, 0.9055, 0.8988, 0.8922, 0.8857, 0.8793, 0.8729, 0.8666, 0.8603, 0.8541, 0.8480, 0.8420, 0.8360, 0.8300, 0.8242, 0.8184, 0.8127, 0.8070, 0.8014, 0.7958, 0.7903, 0.7849, 0.7796, 0.7743, 0.7690, 0.7632, 0.7569, 0.7501, 0.7427, 0.7348, 0.7263, 0.7173, 0.7078, 0.6977, 0.6871, 0.6759, 0.6643, 0.6520, 0.6393]
+  },
+  '400m': {
+    M: [1.0000, 1.0000, 1.0000, 0.9950, 0.9887, 0.9824, 0.9761, 0.9699, 0.9636, 0.9574, 0.9513, 0.9451, 0.9390, 0.9329, 0.9269, 0.9208, 0.9148, 0.9088, 0.9028, 0.8969, 0.8909, 0.8850, 0.8791, 0.8733, 0.8674, 0.8616, 0.8558, 0.8501, 0.8443, 0.8386, 0.8329, 0.8272, 0.8215, 0.8159, 0.8103, 0.8047, 0.7991, 0.7935, 0.7880, 0.7825, 0.7770, 0.7715, 0.7654, 0.7588, 0.7517, 0.7440, 0.7357, 0.7269, 0.7175, 0.7075, 0.6970, 0.6859, 0.6743, 0.6620, 0.6493, 0.6360, 0.6221, 0.6076, 0.5926, 0.5770, 0.5609],
+    F: [1.0000, 1.0000, 0.9980, 0.9915, 0.9849, 0.9783, 0.9716, 0.9648, 0.9580, 0.9511, 0.9441, 0.9371, 0.9300, 0.9229, 0.9157, 0.9084, 0.9011, 0.8937, 0.8862, 0.8787, 0.8711, 0.8635, 0.8558, 0.8481, 0.8403, 0.8324, 0.8245, 0.8166, 0.8086, 0.8005, 0.7924, 0.7842, 0.7760, 0.7677, 0.7594, 0.7510, 0.7426, 0.7341, 0.7256, 0.7171, 0.7084, 0.6998, 0.6911, 0.6823, 0.6735, 0.6647, 0.6555, 0.6459, 0.6359, 0.6255, 0.6148, 0.6037, 0.5922, 0.5804, 0.5682, 0.5556, 0.5426, 0.5292, 0.5155, 0.5014, 0.4869]
+  },
+  '5km': {
+    M: [0.9999, 0.9988, 0.9965, 0.9930, 0.9883, 0.9824, 0.9755, 0.9685, 0.9615, 0.9545, 0.9475, 0.9405, 0.9335, 0.9265, 0.9195, 0.9125, 0.9055, 0.8985, 0.8915, 0.8845, 0.8775, 0.8705, 0.8635, 0.8565, 0.8495, 0.8425, 0.8355, 0.8285, 0.8215, 0.8145, 0.8075, 0.8005, 0.7935, 0.7865, 0.7795, 0.7725, 0.7655, 0.7585, 0.7514, 0.7436, 0.7353, 0.7264, 0.7169, 0.7068, 0.6960, 0.6847, 0.6728, 0.6603, 0.6472, 0.6334, 0.6191, 0.6042, 0.5887, 0.5726, 0.5558, 0.5385, 0.5206, 0.5021, 0.4830, 0.4632, 0.4429],
+    F: [0.9959, 0.9936, 0.9908, 0.9875, 0.9836, 0.9793, 0.9744, 0.9691, 0.9632, 0.9568, 0.9499, 0.9425, 0.9346, 0.9262, 0.9172, 0.9078, 0.8980, 0.8883, 0.8786, 0.8689, 0.8592, 0.8495, 0.8398, 0.8301, 0.8204, 0.8107, 0.8009, 0.7912, 0.7815, 0.7718, 0.7621, 0.7524, 0.7427, 0.7330, 0.7233, 0.7136, 0.7038, 0.6941, 0.6844, 0.6747, 0.6650, 0.6553, 0.6456, 0.6359, 0.6262, 0.6165, 0.6067, 0.5970, 0.5868, 0.5758, 0.5640, 0.5515, 0.5382, 0.5242, 0.5094, 0.4938, 0.4775, 0.4604, 0.4426, 0.4240, 0.4046]
+  },
+  '10km': {
+    M: [1.0000, 0.9996, 0.9985, 0.9967, 0.9942, 0.9909, 0.9869, 0.9822, 0.9767, 0.9705, 0.9636, 0.9561, 0.9486, 0.9411, 0.9336, 0.9261, 0.9186, 0.9111, 0.9036, 0.8961, 0.8886, 0.8811, 0.8736, 0.8661, 0.8586, 0.8511, 0.8436, 0.8361, 0.8286, 0.8211, 0.8136, 0.8061, 0.7986, 0.7911, 0.7836, 0.7761, 0.7686, 0.7611, 0.7536, 0.7461, 0.7386, 0.7308, 0.7223, 0.7131, 0.7033, 0.6928, 0.6816, 0.6697, 0.6572, 0.6440, 0.6301, 0.6156, 0.6004, 0.5845, 0.5680, 0.5508, 0.5329, 0.5143, 0.4951, 0.4752, 0.4546],
+    F: [0.9980, 0.9964, 0.9944, 0.9920, 0.9891, 0.9857, 0.9819, 0.9777, 0.9730, 0.9679, 0.9623, 0.9563, 0.9499, 0.9429, 0.9356, 0.9278, 0.9195, 0.9109, 0.9017, 0.8921, 0.8822, 0.8723, 0.8623, 0.8524, 0.8425, 0.8325, 0.8226, 0.8126, 0.8027, 0.7928, 0.7828, 0.7729, 0.7629, 0.7530, 0.7431, 0.7331, 0.7232, 0.7132, 0.7033, 0.6934, 0.6834, 0.6735, 0.6635, 0.6536, 0.6437, 0.6337, 0.6234, 0.6123, 0.6005, 0.5879, 0.5745, 0.5604, 0.5455, 0.5299, 0.5135, 0.4963, 0.4784, 0.4597, 0.4403, 0.4201, 0.3991]
+  },
+  'half': {
+    M: [1.0000, 1.0000, 0.9996, 0.9982, 0.9960, 0.9928, 0.9888, 0.9839, 0.9781, 0.9714, 0.9638, 0.9560, 0.9483, 0.9405, 0.9327, 0.9249, 0.9171, 0.9094, 0.9016, 0.8938, 0.8860, 0.8782, 0.8705, 0.8627, 0.8549, 0.8471, 0.8393, 0.8316, 0.8238, 0.8160, 0.8082, 0.8004, 0.7927, 0.7849, 0.7771, 0.7693, 0.7615, 0.7538, 0.7460, 0.7382, 0.7304, 0.7223, 0.7135, 0.7040, 0.6938, 0.6830, 0.6715, 0.6593, 0.6464, 0.6328, 0.6185, 0.6036, 0.5880, 0.5717, 0.5547, 0.5370, 0.5186, 0.4996, 0.4799, 0.4595, 0.4384],
+    F: [0.9979, 0.9962, 0.9941, 0.9915, 0.9884, 0.9849, 0.9809, 0.9764, 0.9714, 0.9660, 0.9601, 0.9537, 0.9468, 0.9395, 0.9317, 0.9234, 0.9147, 0.9055, 0.8958, 0.8856, 0.8753, 0.8649, 0.8546, 0.8442, 0.8339, 0.8235, 0.8132, 0.8028, 0.7925, 0.7821, 0.7718, 0.7614, 0.7511, 0.7407, 0.7304, 0.7200, 0.7097, 0.6993, 0.6890, 0.6786, 0.6683, 0.6579, 0.6476, 0.6372, 0.6269, 0.6165, 0.6059, 0.5945, 0.5822, 0.5692, 0.5554, 0.5407, 0.5253, 0.5091, 0.4921, 0.4742, 0.4556, 0.4362, 0.4159, 0.3949, 0.3731]
+  }
+};
+var AGE_GRADE_EVENTS = { '60m': 1, '400m': 1, '5km': 1, '10km': 1, 'half': 1 };
+var AGE_GRADE_LABEL = 'age-graded %, not a percentile';
+/* age-graded % = 100 x (open standard / age factor) / your time; null outside the table or for bad input */
+function ageGrade(event, sex, age, seconds) {
+  if (!AGE_GRADE_EVENTS[event] || (sex !== 'M' && sex !== 'F') || !(seconds > 0) || !(age > 0)) return null;
+  var a = Math.floor(age);
+  if (a > AGE_GRADE_MAX_AGE) return { ok: false, reason: 'outside the published table (ages up to ' + AGE_GRADE_MAX_AGE + ')' };
+  var factor = a < AGE_GRADE_MIN_AGE ? 1 : AGE_GRADE_FACTORS[event][sex][a - AGE_GRADE_MIN_AGE];
+  var standard = AGE_GRADE_OPEN[event][sex] / factor;
+  return { ok: true, event: event, factor: factor, standard: standard, pct: 100 * standard / seconds, label: AGE_GRADE_LABEL };
+}
+/* 60-minute zone: a distance covered in 60 min is converted to a 10K time with Riegel and tagged "converted" */
+function tenKFromHour(metres) { return metres > 0 ? { seconds: riegelTime(3600, metres, 10000), converted: true } : null; }
+
+/* sprint timing noise: phone slow-motion video vs hand stopwatch (SPEC v2.1 (b)) */
+var SPRINT_MDC = { video: 0.03, hand: 0.05 };
+function sprintMdc(timing) { return timing === 'video' ? SPRINT_MDC.video : SPRINT_MDC.hand; }
+
+/* hike: observed-only (no published norms). Naismith: 5 km/h + 600 m ascent/h, +10% time per 10% bodyweight of pack */
+var HIKE_MIN_MOVING_S = 7200, HIKE_MIN_ASCENT_M = 300, HIKE_MIN_LOAD_KG = 10, HIKE_MDC = 0.10;
+var HIKE_LABEL = 'observed effort, no published norms';
+function naismithSeconds(km, ascentM, loadKg, bodyKg) {
+  var base = (km / 5 + ascentM / 600) * 3600, load = loadKg > 0 && bodyKg > 0 ? loadKg / bodyKg : 0;
+  return base * (1 + load);
+}
+function hikeRatio(h, bodyKg) {
+  if (!h || !(h.km > 0) || !(h.movingS > 0)) return { ok: false, reason: 'enter distance and moving time' };
+  if (h.movingS < HIKE_MIN_MOVING_S || !((h.ascentM || 0) >= HIKE_MIN_ASCENT_M || (h.loadKg || 0) >= HIKE_MIN_LOAD_KG))
+    return { ok: false, reason: 'too short to count: needs at least 2 h moving and 300 m ascent or a 10 kg pack' };
+  var t = naismithSeconds(h.km, h.ascentM || 0, h.loadKg || 0, bodyKg), r = t / h.movingS;
+  return { ok: true, ratio: r, naismithS: t, label: HIKE_LABEL,
+    band: r >= 1 ? 'at or above guidebook pace' : r >= 0.8 ? 'steady' : 'below guidebook pace' };
+}
+/* EXPORT (add to root.LMX): AGE_GRADE_FACTORS, AGE_GRADE_OPEN, AGE_GRADE_LABEL, ageGrade, tenKFromHour, SPRINT_MDC, sprintMdc,
+   HIKE_LABEL, HIKE_MDC, naismithSeconds, hikeRatio */
 root.LMX = {
   ZONES: ZONES, TIER_LABEL: TIER_LABEL, METRICS: METRICS, FRIEND: FRIEND,
   parseTime: parseTime, fmtTime: fmtTime, addDays: addDays, daysBetween: daysBetween,
@@ -773,7 +834,8 @@ root.LMX = {
   vo2DetrainLoss: vo2DetrainLoss, strengthDetrainLoss: strengthDetrainLoss, effectiveBaseline: effectiveBaseline, layoffDays: layoffDays,
   blockTargets: blockTargets, targetCurve: targetCurve, buildWeekTemplate: buildWeekTemplate,
   generateProgram: generateProgram, programDay: programDay, blockAdherence: blockAdherence,
-  PROXY_BAND: PROXY_BAND, proxyLabel: proxyLabel, LIFT_MAP: LIFT_MAP, MUST_TEST: MUST_TEST, mapLift: mapLift, parseCsv: parseCsv, parseNum: parseNum, parseDate: parseDate, parseStrong: parseStrong, parseStrava: parseStrava, riegelTime: riegelTime, riegelDistance: riegelDistance, vdot: vdot, bestEnvelope: bestEnvelope, criticalSpeed: criticalSpeed, proxyEstimates: proxyEstimates, realZones: realZones, activeProxies: activeProxies, weakestProxy: weakestProxy, mustTestOrder: mustTestOrder
+  PROXY_BAND: PROXY_BAND, proxyLabel: proxyLabel, LIFT_MAP: LIFT_MAP, MUST_TEST: MUST_TEST, mapLift: mapLift, parseCsv: parseCsv, parseNum: parseNum, parseDate: parseDate, parseStrong: parseStrong, parseStrava: parseStrava, riegelTime: riegelTime, riegelDistance: riegelDistance, vdot: vdot, bestEnvelope: bestEnvelope, criticalSpeed: criticalSpeed, proxyEstimates: proxyEstimates, realZones: realZones, activeProxies: activeProxies, weakestProxy: weakestProxy, mustTestOrder: mustTestOrder,
+  AGE_GRADE_FACTORS: AGE_GRADE_FACTORS, AGE_GRADE_OPEN: AGE_GRADE_OPEN, AGE_GRADE_LABEL: AGE_GRADE_LABEL, ageGrade: ageGrade, tenKFromHour: tenKFromHour, SPRINT_MDC: SPRINT_MDC, sprintMdc: sprintMdc, HIKE_LABEL: HIKE_LABEL, HIKE_MDC: HIKE_MDC, naismithSeconds: naismithSeconds, hikeRatio: hikeRatio
 };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
