@@ -85,7 +85,7 @@ test('migration: schema-1 backup -> schema 2, program marked stale, assessments 
 test('block targets: sprint gated by timing noise, aer by 2%, hike is a habit target; zone ids valid', () => {
   const t = (a) => L.blockTargets([a], 12, null).items;
   const video = t({ ...base, sprintS: 8.2, sprintTiming: 'video' }).find((i) => i.zone === 'sprint');
-  assert.equal(video.target, 7.95); assert.equal(video.shown, true);                 // -3% vs 3% video noise
+  assert.equal(video.target, 7.95); assert.equal(video.shown, false);                 // tie -> trend only
   assert.equal(t({ ...base, sprintS: 8.2, sprintTiming: 'hand' }).find((i) => i.zone === 'sprint').shown, false);   // inside 5% hand noise
   const aer = t({ ...base, aerMode: '10k', aerS: 3000 }).find((i) => i.zone === 'aer');
   assert.equal(aer.target, 2910); assert.equal(aer.shown, true);

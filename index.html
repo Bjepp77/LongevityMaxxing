@@ -373,25 +373,26 @@ var STRENGTH_RATE = { novice: 0.04, intermediate: 0.015, advanced: 0.0075 };
 function blockTargets(history, weeks, layoff) {
   var a = history[history.length - 1], blocks = weeks / 4, eff = effectiveBaseline(a, layoff), T = [];
   function push(zone, metric, cur, target, fmt, unitLabel, extra) {
-    var delta = (target - cur) * METRICS[metric].better, gate = metric === 'pushups' ? 1 : mdc(metric, cur);
+    var rawTarget = (extra && extra.rawTarget !== undefined) ? extra.rawTarget : target;
+    var delta = (rawTarget - cur) * METRICS[metric].better, gate = metric === 'pushups' ? 1 : mdc(metric, cur);
     T.push(Object.assign({ zone: zone, metric: metric, label: METRICS[metric].label, current: cur, target: target, fmt: fmt, unit: unitLabel,
-      expected: delta, mdc: gate, shown: delta >= gate - 1e-9 }, extra || {}));
+      expected: delta, mdc: gate, shown: delta > gate + 1e-9 }, extra || {}));
   }
   var id = function (v) { return String(v); };
   if (num(a.jumpCm)) {
     var jb = Math.min(blocks, 3);   /* 1-2% per 4 wk for 8-12 wk, then flat */
-    push('power', 'jump', a.jumpCm, round(a.jumpCm * (1 + 0.015 * jb)), id, 'cm', { why: 'power +1–2%/4 wk' });
+    push('power', 'jump', a.jumpCm, round(a.jumpCm * (1 + 0.015 * jb)), id, 'cm', { rawTarget: a.jumpCm * (1 + 0.015 * jb), why: 'power +1–2%/4 wk' });
   }
   var e = eff.e1rm;
   if (e) {
     var rate = STRENGTH_RATE[a.level || 'intermediate'];
-    push('pillar', 'e1rm', round(e), round(e * (1 + rate * blocks)), id, 'kg est. 1RM', { why: (a.level || 'intermediate') + ' ' + (rate * 100).toFixed(1) + '%/4 wk' });
+    push('pillar', 'e1rm', round(e), round(e * (1 + rate * blocks)), id, 'kg est. 1RM', { rawTarget: e * (1 + rate * blocks), why: (a.level || 'intermediate') + ' ' + (rate * 100).toFixed(1) + '%/4 wk' });
     T.push({ zone: 'pillar', metric: 'repPR', label: 'Rep-PR at ' + a.liftKg + ' kg', current: a.liftReps, target: a.liftReps + Math.round(blocks), fmt: id, unit: 'reps',
       expected: Math.round(blocks), mdc: 1, shown: true, why: 'rep PRs are exact: +1 rep per 4-week block' });
   }
-  if (num(a.gripKg)) push('pillar', 'grip', a.gripKg, round(a.gripKg * (1 + 0.005 * blocks)), id, 'kg', { why: 'grip 0–1%/4 wk' });
-  if (num(a.hangS)) push('pillar', 'hang', a.hangS, round(a.hangS * (1 + 0.03 * blocks)), id, 's', { why: 'own-baseline seconds, +5–10%/block' });
-  if (num(a.anaS)) push('ana', 'ana', a.anaS, round(a.anaS * (1 - 0.0075 * blocks)), fmtTime, a.anaMode === 'row500' ? '500 m row' : '400 m run', { why: 'sprint ~1–2% per 8 wk' });
+  if (num(a.gripKg)) push('pillar', 'grip', a.gripKg, round(a.gripKg * (1 + 0.005 * blocks)), id, 'kg', { rawTarget: a.gripKg * (1 + 0.005 * blocks), why: 'grip 0–1%/4 wk' });
+  if (num(a.hangS)) push('pillar', 'hang', a.hangS, round(a.hangS * (1 + 0.03 * blocks)), id, 's', { rawTarget: a.hangS * (1 + 0.03 * blocks), why: 'own-baseline seconds, +5–10%/block' });
+  if (num(a.anaS)) push('ana', 'ana', a.anaS, round(a.anaS * (1 - 0.0075 * blocks)), fmtTime, a.anaMode === 'row500' ? '500 m row' : '400 m run', { rawTarget: a.anaS * (1 - 0.0075 * blocks), why: 'sprint ~1–2% per 8 wk' });
   if (num(a.pushups) !== null) T.push({ zone: 'pillar', metric: 'pushups', label: 'Push-ups', current: a.pushups, target: a.pushups + 2 * Math.round(blocks), fmt: id, unit: 'reps',
       expected: 2 * Math.round(blocks), mdc: 1, shown: true, why: 'rep-PR ladder: +2 per block' });
   var v = eff.vo2;
@@ -407,7 +408,7 @@ function blockTargets(history, weeks, layoff) {
       expected: dv, mdc: 1.5, shown: dv >= 1.5,
       why: (pct > 90 ? 'above P90: ~0.5%/4 wk' : first ? 'first block 2–3%/4 wk' : '~1%/4 wk after the first block') + ' → +' + dv.toFixed(1) + ' mL/kg/min (noise ±1.5)' });
   }
-  if (num(a.fiveKS)) push('thr', 'fiveK', a.fiveKS, round(a.fiveKS * (1 - 0.01 * blocks)), fmtTime, '5K', { why: 'threshold ~1%/4 wk (thin data)' });
+  if (num(a.fiveKS)) push('thr', 'fiveK', a.fiveKS, round(a.fiveKS * (1 - 0.01 * blocks)), fmtTime, '5K', { rawTarget: a.fiveKS * (1 - 0.01 * blocks), why: 'threshold ~1%/4 wk (thin data)' });
   if (num(a.z2Min) !== null) {
     var zc = a.z2Min, zt = zc >= 200 ? zc : clamp(zc + 20 * blocks, 150, 200);
     T.push({ zone: 'behaviour', metric: 'z2min', label: 'Zone-2 minutes / week', current: zc, target: Math.max(zt, zc), fmt: id, unit: 'min/wk',
@@ -416,10 +417,11 @@ function blockTargets(history, weeks, layoff) {
   /* v2.1 zones (SPEC v2.1 (d)); noise gate unchanged: a number only when the expected change beats the test's MDC */
   if (num(a.sprintS)) {
     var sm = a.sprintTiming === 'video' ? 'sprintVideo' : 'sprint', sb = Math.min(blocks, 3);   /* ~1%/4 wk for 8-12 wk, then flat */
-    push('sprint', sm, a.sprintS, Math.round(a.sprintS * (1 - 0.01 * sb) * 100) / 100, fmtSec, 's 60 m', { why: 'speed ~1%/4 wk for 8–12 wk; ' + (sm === 'sprintVideo' ? 'video' : 'hand') + ' timing noise ±' + Math.round(METRICS[sm].rel * 100) + '%' });
+    var rawSprint = a.sprintS * (1 - 0.01 * sb);
+    push('sprint', sm, a.sprintS, Math.round(rawSprint * 100) / 100, fmtSec, 's 60 m', { rawTarget: rawSprint, why: 'speed ~1%/4 wk for 8–12 wk; ' + (sm === 'sprintVideo' ? 'video' : 'hand') + ' timing noise ±' + Math.round(METRICS[sm].rel * 100) + '%' });
   }
   var ax = aerOf(a);
-  if (ax) push('aer', 'aer', round(ax.seconds), round(ax.seconds * (1 - 0.01 * blocks)), fmtTime, ax.event === 'half' ? 'half marathon' : '10K' + (ax.converted ? ' (converted)' : ''), { why: 'aerobic ~1%/4 wk' });
+  if (ax) push('aer', 'aer', round(ax.seconds), round(ax.seconds * (1 - 0.01 * blocks)), fmtTime, ax.event === 'half' ? 'half marathon' : '10K' + (ax.converted ? ' (converted)' : ''), { rawTarget: ax.seconds * (1 - 0.01 * blocks), why: 'aerobic ~1%/4 wk' });
   var hk = hikeOf(a);
   if (hk.ok) {
     var hm = Math.round(a.hike.movingS / 60), ht = Math.min(HIKE_MAX_MIN, Math.max(hm, HIKE_START_MIN) + 15 * blocks);
