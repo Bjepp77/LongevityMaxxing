@@ -551,6 +551,216 @@ function blockAdherence(program, log, iso) {
   return { block: b, planned: planned, done: done, pct: planned ? done / planned : null };
 }
 
+/* ======================= v2: log import + provisional placement (docs/SPEC.md "v2") ======================= */
+/* Proxies are computed from import summaries only; nothing above this line reads them. */
+var LB_KG = 0.45359237, PROXY_WINDOW_DAYS = 112, EFFORT_KEEP_DAYS = 364, EFFORT_KEEP_MAX = 400, BOM = String.fromCharCode(0xFEFF);
+var PROXY_BAND = { z6: 0.08, z7: 0.11, z7race: 0.05, z5: 0.20, e1rm: 0.10 };
+function proxyLabel(pct) { return 'Estimated from your log, ±' + Math.round(pct * 100) + '%, provisional until tested'; }
+var MUST_TEST = ['z1', 'z2', 'z3', 'z4'];
+var LIFT_MAP = {
+  trapbar: { name: 'Trap-bar deadlift', alias: ['trap bar deadlift', 'trap-bar deadlift', 'hex bar deadlift', 'deadlift (trap bar)'] },
+  deadlift: { name: 'Deadlift', alias: ['deadlift', 'deadlift (barbell)', 'conventional deadlift', 'barbell deadlift'] },
+  squat: { name: 'Back squat', alias: ['squat', 'squat (barbell)', 'back squat', 'back squat (barbell)', 'barbell squat', 'barbell back squat'] },
+  bench: { name: 'Bench press', alias: ['bench press', 'bench press (barbell)', 'barbell bench press'] },
+  ohp: { name: 'Overhead press', alias: ['overhead press', 'overhead press (barbell)', 'strict press', 'military press', 'barbell overhead press'] },
+  row: { name: 'Barbell row', alias: ['bent over row', 'bent over row (barbell)', 'barbell row', 'pendlay row', 'pendlay row (barbell)'] }
+};
+var ALIAS = {};
+Object.keys(LIFT_MAP).forEach(function (k) { LIFT_MAP[k].alias.forEach(function (a) { ALIAS[a] = k; }); });
+function mapLift(name) { return ALIAS[String(name || '').toLowerCase().replace(/\s+/g, ' ').trim()] || null; }
+
+/* RFC 4180-style CSV with quotes; delimiter auto-detected from the header line (',' or ';') */
+function parseCsv(text) {
+  text = String(text || ''); if (text.charAt(0) === BOM) text = text.slice(1);
+  var firstLine = text.split(/\r?\n/)[0] || '';
+  var delim = (firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length ? ';' : ',';
+  var rows = [], row = [], f = '', q = false, i, c;
+  for (i = 0; i < text.length; i++) {
+    c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; continue; }
+    if (c === '"') q = true;
+    else if (c === delim) { row.push(f); f = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(f); rows.push(row); row = []; f = ''; }
+    else f += c;
+  }
+  if (f !== '' || row.length) { row.push(f); rows.push(row); }
+  return { delim: delim, rows: rows.filter(function (r) { return r.some(function (x) { return x.trim() !== ''; }); }) };
+}
+/* numbers: '102.5', '102,5', '1,234.5', '1.234,5' -> Number; anything else -> null */
+function parseNum(s) {
+  if (s === null || s === undefined) return null;
+  s = String(s).trim().replace(/\s/g, ''); if (!s) return null;
+  var lc = s.lastIndexOf(','), ld = s.lastIndexOf('.');
+  if (lc >= 0 && ld >= 0) s = lc > ld ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  else if (lc >= 0) s = s.match(/,/g).length === 1 && !/,\d{3}$/.test(s) ? s.replace(',', '.') : s.replace(/,/g, '');
+  if (!/^-?\d+(\.\d+)?$/.test(s)) return null;
+  return Number(s);
+}
+var MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+function pad2(n) { return (n < 10 ? '0' : '') + n; }
+/* 'YYYY-MM-DD[ hh:mm:ss]', 'Oct 3, 2026, 7:15:22 AM', '3 Oct 2026' -> 'YYYY-MM-DD' or null */
+function parseDate(s) {
+  s = String(s || '').trim(); var m;
+  if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return m[1] + '-' + pad2(+m[2]) + '-' + pad2(+m[3]);
+  if ((m = s.match(/^([A-Za-z]{3})[a-z]*\.? (\d{1,2}),? (\d{4})/)) && MONTHS[m[1].toLowerCase()]) return m[3] + '-' + pad2(MONTHS[m[1].toLowerCase()]) + '-' + pad2(+m[2]);
+  if ((m = s.match(/^(\d{1,2}) ([A-Za-z]{3})[a-z]*\.? (\d{4})/)) && MONTHS[m[2].toLowerCase()]) return m[3] + '-' + pad2(MONTHS[m[2].toLowerCase()]) + '-' + pad2(+m[1]);
+  return null;
+}
+function headerIndex(header) {
+  var idx = {};
+  header.forEach(function (h, i) { var k = h.trim().toLowerCase(); (idx[k] = idx[k] || []).push(i); });
+  return idx;
+}
+function unitOf(s) { s = String(s || '').toLowerCase(); return /\blbs?\b|pound/.test(s) ? 'lb' : /\bkgs?\b|kilo/.test(s) ? 'kg' : null; }
+
+/* Strong CSV -> derived summary only (raw text is not kept). opts.unit: 'kg'|'lb' fallback when the file does not say. */
+function parseStrong(text, opts) {
+  opts = opts || {};
+  var csv = parseCsv(text), header = csv.rows[0] || [], idx = headerIndex(header), body = csv.rows.slice(1);
+  function col(re) { for (var k in idx) if (re.test(k)) return idx[k][0]; return -1; }
+  var cDate = col(/^date$/), cEx = col(/^exercise name$/), cSet = col(/^set order$/), cW = col(/^weight( \(.*\))?$/), cR = col(/^reps$/), cU = col(/^weight unit$/);
+  if (cDate < 0 || cEx < 0 || cW < 0 || cR < 0) throw new Error('This does not look like a Strong export (need Date, Exercise Name, Weight, Reps columns).');
+  var headerUnit = unitOf(header[cW]), fallback = opts.unit === 'lb' ? 'lb' : 'kg', units = {};
+  var lifts = {}, unmapped = {}, sets = 0, skipped = 0, from = null, to = null, assumed = false;
+  body.forEach(function (r) {
+    var so = cSet >= 0 ? String(r[cSet] || '').toLowerCase() : '';
+    if (/rest/.test(so)) return;
+    var date = parseDate(r[cDate]), ex = (r[cEx] || '').trim(), w = parseNum(r[cW]), reps = parseNum(r[cR]);
+    if (!date || !ex || w === null || reps === null || reps <= 0 || w < 0 || Math.round(reps) !== reps) { skipped++; return; }
+    var u = (cU >= 0 && unitOf(r[cU])) || headerUnit; if (!u) { u = fallback; assumed = true; }
+    units[u] = (units[u] || 0) + 1;
+    var kg = u === 'lb' ? w * LB_KG : w;
+    sets++; if (!from || date < from) from = date; if (!to || date > to) to = date;
+    var key = mapLift(ex);
+    if (!key) { unmapped[ex] = (unmapped[ex] || 0) + 1; return; }
+    var Lf = lifts[key] = lifts[key] || { lift: key, name: LIFT_MAP[key].name, sets: 0, e1rm: null };
+    Lf.sets++;
+    if (reps > 10 || kg <= 0) return;   /* Epley only for sets of <= 10 reps */
+    var e = e1rm(kg, reps);
+    if (Lf.e1rm === null || e > Lf.e1rm) { Lf.e1rm = e; Lf.kg = Math.round(kg * 10) / 10; Lf.reps = reps; Lf.date = date; }
+  });
+  return { kind: 'strong', sets: sets, skipped: skipped, from: from, to: to, units: units, unitAssumed: assumed ? fallback : null,
+    lifts: lifts, unmapped: Object.keys(unmapped).sort().map(function (n) { return { name: n, sets: unmapped[n] }; }) };
+}
+
+var RUN_TYPES = { 'run': 1, 'trail run': 1, 'virtual run': 1 }, HIKE_TYPES = { 'hike': 1, 'walk': 1 };
+function isRace(name, workoutType) { return Number(workoutType) === 1 || /\b(race|parkrun|marathon|half)\b/i.test(name || ''); }
+
+/* Strava activities.csv -> derived summary only. asOf 'YYYY-MM-DD': run efforts older than 52 weeks are dropped. */
+function parseStrava(text, asOf) {
+  var csv = parseCsv(text), header = csv.rows[0] || [], idx = headerIndex(header), body = csv.rows.slice(1);
+  function last(k) { return idx[k] ? idx[k][idx[k].length - 1] : -1; }
+  function first(k) { return idx[k] ? idx[k][0] : -1; }
+  var cDate = first('activity date'), cName = first('activity name'), cType = first('activity type'), cEl = first('elapsed time'),
+      cMov = first('moving time'), cDist = last('distance'), nDist = (idx.distance || []).length, cElev = first('elevation gain'),
+      cHr = first('average heart rate'), cWt = first('workout type');
+  if (cDate < 0 || cType < 0 || cEl < 0 || cDist < 0) throw new Error('This does not look like a Strava activities.csv (need Activity Date, Activity Type, Elapsed Time, Distance).');
+  var efforts = [], hikes = { count: 0, longestS: 0, elevM: 0 }, counts = { rows: body.length, runs: 0, hikes: 0, other: 0, skipped: 0 }, from = null, to = null;
+  body.forEach(function (r) {
+    var date = parseDate(r[cDate]), type = String(r[cType] || '').trim().toLowerCase(), el = parseNum(r[cEl]), dist = parseNum(r[cDist]);
+    if (!date || !type || el === null || el <= 0 || dist === null || dist < 0) { counts.skipped++; return; }
+    var m = nDist > 1 ? dist : (dist > 500 ? dist : dist * 1000);
+    if (!from || date < from) from = date; if (!to || date > to) to = date;
+    if (HIKE_TYPES[type]) { counts.hikes++; hikes.count++; hikes.longestS = Math.max(hikes.longestS, el); hikes.elevM += cElev >= 0 ? (parseNum(r[cElev]) || 0) : 0; return; }
+    if (!RUN_TYPES[type]) { counts.other++; return; }
+    counts.runs++;
+    var race = isRace(cName >= 0 ? r[cName] : '', cWt >= 0 ? r[cWt] : null), mov = cMov >= 0 ? parseNum(r[cMov]) : null;
+    var t = race || !mov ? el : mov;
+    if (m < 1200 || m > 21300 || (asOf && daysBetween(date, asOf) > EFFORT_KEEP_DAYS)) return;
+    var e = { date: date, m: Math.round(m), s: Math.round(t), race: race };
+    var hr = cHr >= 0 ? parseNum(r[cHr]) : null; if (hr) e.hr = Math.round(hr);
+    efforts.push(e);
+  });
+  efforts.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+  return { kind: 'strava', counts: counts, from: from, to: to, hikes: hikes, efforts: efforts.slice(0, EFFORT_KEEP_MAX) };
+}
+
+/* ---------- proxy equations ---------- */
+function riegelTime(t1, d1, d2) { return t1 * Math.pow(d2 / d1, 1.06); }
+function riegelDistance(t1, d1, t2) { return d1 * Math.pow(t2 / t1, 1 / 1.06); }
+/* Daniels-Gilbert VDOT from a performance (metres, seconds) */
+function vdot(m, s) {
+  var t = s / 60, v = m / t;
+  var vo2 = -4.60 + 0.182258 * v + 0.000104 * v * v, pmax = 0.8 + 0.1894393 * Math.exp(-0.012778 * t) + 0.2989558 * Math.exp(-0.1932605 * t);
+  return vo2 / pmax;
+}
+/* upper envelope: drop an effort if another lasted at least as long at a faster average speed */
+function bestEnvelope(efforts) {
+  return efforts.filter(function (e) {
+    return !efforts.some(function (o) { return o !== e && o.s >= e.s && o.m / o.s > e.m / e.s; });
+  });
+}
+/* critical speed: least squares D = CS*t + D' over envelope efforts lasting 2-20 min */
+function criticalSpeed(efforts) {
+  var pts = bestEnvelope((efforts || []).filter(function (e) { return e.s >= 120 && e.s <= 1200; }));
+  var seen = {}; pts = pts.filter(function (e) { var k = e.m + '|' + e.s; if (seen[k]) return false; seen[k] = 1; return true; });
+  if (pts.length < 3) return { ok: false, reason: 'not enough data: need at least 3 best efforts lasting 2–20 min (have ' + pts.length + ')', points: pts };
+  var ts = pts.map(function (p) { return p.s; }), tmin = Math.min.apply(null, ts), tmax = Math.max.apply(null, ts);
+  if (tmax < 2 * tmin) return { ok: false, reason: 'not enough data: best efforts span too little time (longest must be at least twice the shortest)', points: pts };
+  var n = pts.length, mt = pts.reduce(function (a, p) { return a + p.s; }, 0) / n, md = pts.reduce(function (a, p) { return a + p.m; }, 0) / n;
+  var sxy = 0, sxx = 0; pts.forEach(function (p) { sxy += (p.s - mt) * (p.m - md); sxx += (p.s - mt) * (p.s - mt); });
+  var cs = sxy / sxx, dp = md - cs * mt;
+  if (!(cs > 0) || dp < 0) return { ok: false, reason: 'not enough data: efforts do not fit a critical-speed line — log a hard 2–5 min effort', points: pts };
+  return { ok: true, cs: cs, dPrime: dp, points: pts, fiveKS: (5000 - dp) / cs };
+}
+function inWindow(efforts, asOf) { return (efforts || []).filter(function (e) { var d = daysBetween(e.date, asOf); return d >= 0 && d <= PROXY_WINDOW_DAYS; }); }
+function pctOrNull(vo2, prof) { return prof && prof.age && (prof.sex === 'M' || prof.sex === 'F') ? vo2Percentile(vo2, prof.age, prof.sex) : null; }
+
+/* three provisional zone placements from a Strava summary; profile {age, sex}; asOf 'YYYY-MM-DD' */
+function proxyEstimates(strava, profile, asOf) {
+  var E = inWindow(strava && strava.efforts, asOf), out = {};
+  var cs = criticalSpeed(E);
+  if (cs.ok) {
+    var vd6 = vdot(5000, cs.fiveKS);
+    out.z6 = { zone: 'z6', ok: true, band: PROXY_BAND.z6, label: proxyLabel(PROXY_BAND.z6), cs: cs.cs, dPrime: cs.dPrime, fiveKS: cs.fiveKS, vdot: vd6,
+      pct: pctOrNull(vd6, profile), n: cs.points.length,
+      text: 'critical speed ' + fmtTime(1000 / cs.cs) + ' /km → 5K ≈ ' + fmtTime(cs.fiveKS) + ' (' + fmtTime(cs.fiveKS * (1 - PROXY_BAND.z6)) + '–' + fmtTime(cs.fiveKS * (1 + PROXY_BAND.z6)) + ') from ' + cs.points.length + ' best efforts' };
+  } else out.z6 = { zone: 'z6', ok: false, reason: cs.reason };
+  var long = E.filter(function (e) { return e.m >= 5000 && e.m <= 21300; }), races = long.filter(function (e) { return e.race; }), pool = races.length ? races : long;
+  if (pool.length) {
+    var b7 = pool.map(function (e) { return { e: e, d60: riegelDistance(e.s, e.m, 3600) }; }).sort(function (a, b) { return b.d60 - a.d60; })[0];
+    var band7 = b7.e.race ? PROXY_BAND.z7race : PROXY_BAND.z7, vd7 = vdot(b7.d60, 3600);
+    out.z7 = { zone: 'z7', ok: true, band: band7, label: proxyLabel(band7), d60: b7.d60, source: b7.e, race: b7.e.race, vdot: vd7, pct: pctOrNull(vd7, profile),
+      text: '≈ ' + (b7.d60 / 1000).toFixed(1) + ' km in 60 min (' + (b7.d60 * (1 - band7) / 1000).toFixed(1) + '–' + (b7.d60 * (1 + band7) / 1000).toFixed(1) + ') from ' +
+        (b7.e.m / 1000).toFixed(1) + ' km in ' + fmtTime(b7.e.s) + ' on ' + b7.e.date + (b7.e.race ? ' (race)' : '') };
+  } else out.z7 = { zone: 'z7', ok: false, reason: 'not enough data: need a run of 5 km to half marathon in the last 16 weeks' };
+  var short = E.filter(function (e) { return e.m >= 1500 && e.m <= 5000; });
+  if (short.length) {
+    var b5 = short.map(function (e) { return { e: e, d12: riegelDistance(e.s, e.m, 720) }; }).sort(function (a, b) { return b.d12 - a.d12; })[0];
+    var v5 = vo2FromCooper(b5.d12), lo = v5 * (1 - PROXY_BAND.z5), hi = v5 * (1 + PROXY_BAND.z5);
+    out.z5 = { zone: 'z5', ok: true, band: PROXY_BAND.z5, label: proxyLabel(PROXY_BAND.z5), vo2: v5, vo2Lo: lo, vo2Hi: hi, d12: b5.d12, source: b5.e,
+      pct: pctOrNull(v5, profile), pctLo: pctOrNull(lo, profile), pctHi: pctOrNull(hi, profile),
+      text: 'VO2max ≈ ' + v5.toFixed(1) + ' mL/kg/min (' + lo.toFixed(1) + '–' + hi.toFixed(1) + ') from ' + (b5.e.m / 1000).toFixed(1) + ' km in ' + fmtTime(b5.e.s) + ' on ' + b5.e.date };
+  } else out.z5 = { zone: 'z5', ok: false, reason: 'not enough data: need a run of 1.5–5 km in the last 16 weeks' };
+  return out;
+}
+
+/* a real assessment that scores the zone replaces its proxy outright (no averaging) */
+function realZones(history) {
+  var r = {};
+  (history || []).forEach(function (a) {
+    if (vo2Of(a) !== null) r.z5 = true;
+    if (num(a.fiveKS)) r.z6 = true;
+    if (num(a.z2Min) !== null) r.z7 = true;
+  });
+  return r;
+}
+function activeProxies(proxies, history) {
+  var real = realZones(history), out = {};
+  Object.keys(proxies || {}).forEach(function (z) { if (proxies[z].ok && !real[z]) out[z] = proxies[z]; });
+  return out;
+}
+/* weakest proxied zone = lowest placement percentile; must-test zones nearest to it on the curve first, ties -> shorter zone */
+function weakestProxy(active) {
+  var z = Object.keys(active || {}).filter(function (k) { return active[k].pct !== null && active[k].pct !== undefined; })
+    .sort(function (a, b) { return active[a].pct - active[b].pct || (a < b ? -1 : 1); });
+  return z[0] || null;
+}
+function mustTestOrder(weakest) {
+  var n = weakest ? Number(weakest.slice(1)) : 0;
+  return MUST_TEST.slice().sort(function (a, b) { var da = Math.abs(Number(a.slice(1)) - n), db = Math.abs(Number(b.slice(1)) - n); return da - db || (a < b ? -1 : 1); });
+}
+
 root.LMX = {
   ZONES: ZONES, TIER_LABEL: TIER_LABEL, METRICS: METRICS, FRIEND: FRIEND,
   parseTime: parseTime, fmtTime: fmtTime, addDays: addDays, daysBetween: daysBetween,
@@ -559,7 +769,8 @@ root.LMX = {
   classifyChange: classifyChange, mdc: mdc, baselineScore: baselineScore, scoreHistory: scoreHistory,
   vo2DetrainLoss: vo2DetrainLoss, strengthDetrainLoss: strengthDetrainLoss, effectiveBaseline: effectiveBaseline, layoffDays: layoffDays,
   blockTargets: blockTargets, targetCurve: targetCurve, buildWeekTemplate: buildWeekTemplate,
-  generateProgram: generateProgram, programDay: programDay, blockAdherence: blockAdherence
+  generateProgram: generateProgram, programDay: programDay, blockAdherence: blockAdherence,
+  PROXY_BAND: PROXY_BAND, proxyLabel: proxyLabel, LIFT_MAP: LIFT_MAP, MUST_TEST: MUST_TEST, mapLift: mapLift, parseCsv: parseCsv, parseNum: parseNum, parseDate: parseDate, parseStrong: parseStrong, parseStrava: parseStrava, riegelTime: riegelTime, riegelDistance: riegelDistance, vdot: vdot, bestEnvelope: bestEnvelope, criticalSpeed: criticalSpeed, proxyEstimates: proxyEstimates, realZones: realZones, activeProxies: activeProxies, weakestProxy: weakestProxy, mustTestOrder: mustTestOrder
 };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>

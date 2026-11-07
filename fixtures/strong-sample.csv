@@ -1,0 +1,11 @@
+Date,Workout Name,Duration,Exercise Name,Set Order,Weight,Weight Unit,Reps,Distance,Seconds,Notes,Workout Notes,RPE
+2026-10-01 07:30:00,Lower,1h 5m,Squat (Barbell),1,120,kg,5,0,0,,,8
+2026-10-01 07:30:00,Lower,1h 5m,Squat (Barbell),2,125,kg,3,0,0,,,9
+2026-10-01 07:30:00,Lower,1h 5m,Squat (Barbell),Rest Timer,0,kg,0,0,180,,,
+2026-10-03 07:30:00,Upper,55m,Bench Press (Barbell),1,225,lbs,5,0,0,,,8
+2026-10-03 07:30:00,Upper,55m,Bench Press (Barbell),2,heavy,lbs,5,0,0,,,8
+2026-10-05 07:30:00,Pull,1h,Trap Bar Deadlift,1,"162,5",kg,5,0,0,comma decimal,,8
+2026-10-05 07:30:00,Pull,1h,Trap Bar Deadlift,2,200,kg,12,0,0,too many reps for Epley,,9
+2026-10-05 07:30:00,Pull,1h,Bicep Curl (Dumbbell),1,14,kg,10,0,0,,,7
+2026-10-07 07:30:00,Press,50m,Overhead Press (Barbell),1,135,lbs,5,0,0,,,8
+2026-10-07 07:30:00,Press,50m,Face Pull (Cable),1,25,kg,15,0,0,,,7
