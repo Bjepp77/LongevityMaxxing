@@ -43,10 +43,11 @@ test('own-baseline zones start at 50 and gain 10 per confirmed improvement', () 
 });
 test('scoring returns 7 zones, composite and two weakest', () => {
   const s = L.scoreHistory([base]);
-  for (const z of L.ZONES) assert.ok(s.zones[z.id].score > 0, z.id);
+  for (const id of ['power', 'ana', 'vo2', 'thr']) assert.ok(s.zones[id].score > 0, id);
+  for (const id of ['sprint', 'aer', 'hike']) assert.equal(s.zones[id].score, null, id + ' has no data in a v1 assessment');
+  assert.ok(s.pillar.score > 0);
   assert.ok(s.composite > 0 && s.composite < 100);
   assert.equal(s.weakest.length, 2);
-  assert.ok(s.weakest.includes('z7'), 'zone-2 at 90 min/wk is below the 150 aim -> weakest tie-break');
 });
 test('block targets are gated by noise', () => {
   const t = L.blockTargets([base], 12, null), by = (m) => t.items.find((i) => i.metric === m);
@@ -70,14 +71,14 @@ test('detraining lowers baselines but not stored results', () => {
   assert.equal(L.effectiveBaseline(base, { start: '2026-10-01', end: '2026-10-20' }).days, 0);
 });
 test('program: 12 weeks, deload every 4th, weakest zones get +1 session', () => {
-  const p = L.generateProgram([base], ['z7', 'z6'], '2026-11-07', null);
+  const p = L.generateProgram([base], ['aer', 'thr'], '2026-11-07', null);
   assert.equal(p.weeks.length, 12);
   assert.deepEqual(p.weeks.map((w) => w.deload).filter(Boolean).length, 3);
   assert.ok(p.weeks[3].deload && p.weeks[7].deload && p.weeks[11].deload);
   const ids = p.template.flat();
-  assert.ok(ids.includes('z2extra') && ids.includes('lt'));
+  assert.ok(ids.includes('aerB') && ids.includes('lt'));
   const count = (w, type) => w.days.flatMap((d) => d.sessions).filter((s) => s.type === type).length;
-  assert.equal(count(p.weeks[0], 'z2'), 3);
+  assert.equal(count(p.weeks[0], 'z2'), 2);
   assert.equal(count(p.weeks[0], 'strength'), 2);
   assert.equal(count(p.weeks[0], 'vo2'), 1);
   assert.equal(count(p.weeks[0], 'stability'), 7);
@@ -96,7 +97,7 @@ test('program: 12 weeks, deload every 4th, weakest zones get +1 session', () => 
   assert.equal(L.programDay(p, '2027-02-01').outside, true);
 });
 test('strength weak zone adds a third strength session', () => {
-  const p = L.generateProgram([base], ['z2', 'z5'], '2026-11-07', null);
+  const p = L.generateProgram([base], ['pillar', 'vo2'], '2026-11-07', null);
   const ids = p.template.flat();
   assert.ok(ids.includes('strengthC') && ids.includes('vo2B'));
 });
