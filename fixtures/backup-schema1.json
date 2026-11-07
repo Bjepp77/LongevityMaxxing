@@ -1,0 +1,143 @@
+{
+ "app": "longevitymaxxing",
+ "version": 2,
+ "exportedAt": "2026-10-20T08:00:00.000Z",
+ "data": {
+  "profile": {
+   "age": 44,
+   "sex": "M",
+   "bw": 84,
+   "level": "intermediate"
+  },
+  "assessments": [
+   {
+    "age": 44,
+    "sex": "M",
+    "bw": 84,
+    "level": "intermediate",
+    "lift": "trapbar",
+    "anaMode": "run400",
+    "vo2Mode": "row2k",
+    "flags": {
+     "sleep": false,
+     "caffeine": false,
+     "heat": false,
+     "tod": "morning"
+    },
+    "sls": {
+     "open": true,
+     "closed": false
+    },
+    "date": "2026-08-01",
+    "savedAt": "2026-08-01T08:00:00.000Z",
+    "jumpCm": 215,
+    "liftKg": 130,
+    "liftReps": 5,
+    "hangS": 70,
+    "gripKg": 48,
+    "anaS": 75,
+    "pushups": 26,
+    "row2kS": 445,
+    "cooperM": null,
+    "fiveKS": 1560,
+    "z2Min": 90,
+    "longPace": "6:40 /km"
+   },
+   {
+    "age": 44,
+    "sex": "M",
+    "bw": 84,
+    "level": "intermediate",
+    "lift": "trapbar",
+    "anaMode": "run400",
+    "vo2Mode": "row2k",
+    "flags": {
+     "sleep": false,
+     "caffeine": false,
+     "heat": false,
+     "tod": "morning"
+    },
+    "sls": {
+     "open": true,
+     "closed": false
+    },
+    "date": "2026-10-15",
+    "savedAt": "2026-10-15T08:00:00.000Z",
+    "jumpCm": 220,
+    "liftKg": 140,
+    "liftReps": 5,
+    "hangS": 75,
+    "gripKg": 50,
+    "anaS": 72,
+    "pushups": 30,
+    "row2kS": 435,
+    "cooperM": null,
+    "fiveKS": 1500,
+    "z2Min": 120,
+    "longPace": "6:30 /km"
+   }
+  ],
+  "program": {
+   "version": 1,
+   "createdAt": "2026-10-16T08:00:00.000Z",
+   "start": "2026-10-16",
+   "assessmentDate": "2026-10-15",
+   "weakest": [
+    "z1",
+    "z7"
+   ],
+   "template": [
+    [
+     "strengthA"
+    ],
+    [
+     "z2"
+    ],
+    [
+     "vo2"
+    ],
+    [
+     "strengthB",
+     "z2extra"
+    ],
+    [
+     "power"
+    ],
+    [
+     "z2long"
+    ],
+    [
+     "powerB"
+    ]
+   ],
+   "weeks": []
+  },
+  "log": [
+   {
+    "date": "2026-10-16",
+    "sessionId": "strengthA",
+    "title": "Strength A",
+    "type": "strength",
+    "done": true,
+    "actual": "fixture",
+    "rpe": 7,
+    "note": "",
+    "loggedAt": "2026-10-16T09:00:00.000Z"
+   }
+  ],
+  "layoff": null,
+  "settings": {
+   "blockWeeks": 12
+  },
+  "importStrong": null,
+  "importStrava": null,
+  "importMeta": {
+   "used": true,
+   "firstImportAt": "2026-10-10T08:00:00.000Z",
+   "firstRealTestAfterImport": {
+    "date": "2026-10-15",
+    "savedAt": "2026-10-15T08:00:00.000Z"
+   }
+  }
+ }
+}

@@ -81,33 +81,34 @@ test('Strava fixture: two Distance columns, types, bad row, no raw text kept', (
 });
 test('proxy estimates from the Strava fixture (hand-computed)', () => {
   const p = fn('proxyEstimates')(L.parseStrava(fx('strava-sample.csv'), AS_OF), PROFILE, AS_OF);
-  assert.equal(p.z6.ok, true); near(p.z6.cs, 4.138314, 1e-5); near(p.z6.fiveKS, 1188.015, 1e-2); assert.equal(p.z6.band, 0.08);
-  assert.equal(p.z7.ok, true); assert.equal(p.z7.race, true); near(p.z7.d60, 13543.05, 0.1); assert.equal(p.z7.band, 0.05);
-  assert.equal(p.z5.ok, true); near(p.z5.vo2, 58.296, 1e-2); assert.equal(p.z5.band, 0.2);   // 5 km/1190 s -> 3112.5 m in 12 min
-  near(p.z5.vo2Lo, 58.296 * 0.8, 1e-2); near(p.z5.vo2Hi, 58.296 * 1.2, 1e-2);
-  for (const z of ['z5', 'z6', 'z7']) {
+  assert.equal(p.thr.ok, true); near(p.thr.cs, 4.138314, 1e-5); near(p.thr.fiveKS, 1188.015, 1e-2); assert.equal(p.thr.band, 0.08);
+  assert.equal(p.aer.ok, true); assert.equal(p.aer.race, true); near(p.aer.d60, 13543.05, 0.1); assert.equal(p.aer.band, 0.05);
+  assert.equal(p.vo2.ok, true); near(p.vo2.vo2, 58.296, 1e-2); assert.equal(p.vo2.band, 0.2);   // 5 km/1190 s -> 3112.5 m in 12 min
+  near(p.vo2.vo2Lo, 58.296 * 0.8, 1e-2); near(p.vo2.vo2Hi, 58.296 * 1.2, 1e-2);
+  for (const z of ['vo2', 'thr', 'aer']) {
     assert.match(p[z].label, /^Estimated from your log, ±\d+%, provisional until tested$/);
     assert.ok(p[z].pct > 0 && p[z].pct < 100, z + ' placement percentile');
   }
-  assert.match(p.z6.label, /±8%/); assert.match(p.z7.label, /±5%/); assert.match(p.z5.label, /±20%/);
+  assert.match(p.thr.label, /±8%/); assert.match(p.aer.label, /±5%/); assert.match(p.vo2.label, /±20%/);
 });
 test('proxies need recent data and fall back to an 11% band without a race', () => {
   const s = L.parseStrava(fx('strava-sample.csv'), AS_OF);
   const late = L.proxyEstimates(s, PROFILE, '2027-06-01');                  // > 16 weeks later
-  for (const z of ['z5', 'z6', 'z7']) { assert.equal(late[z].ok, false); assert.match(late[z].reason, /not enough data/); }
+  for (const z of ['vo2', 'thr', 'aer']) { assert.equal(late[z].ok, false); assert.match(late[z].reason, /not enough data/); }
   const noRace = { ...s, efforts: s.efforts.filter((e) => !e.race) };
   const p = L.proxyEstimates(noRace, PROFILE, AS_OF);
-  assert.equal(p.z7.band, 0.11); near(p.z7.d60, 5000 * Math.pow(3600 / 1190, 1 / 1.06), 0.1);
-  assert.equal(L.proxyEstimates(s, {}, AS_OF).z5.pct, null);                 // no age/sex -> no percentile
+  assert.equal(p.aer.band, 0.11); near(p.aer.d60, 5000 * Math.pow(3600 / 1190, 1 / 1.06), 0.1);
+  assert.equal(L.proxyEstimates(s, {}, AS_OF).vo2.pct, null);                 // no age/sex -> no percentile
 });
 test('a real test replaces the proxy outright; must-test order', () => {
   const p = L.proxyEstimates(L.parseStrava(fx('strava-sample.csv'), AS_OF), PROFILE, AS_OF);
-  assert.deepEqual([...Object.keys(fn('activeProxies')(p, []))].sort(), ['z5', 'z6', 'z7']);
+  assert.deepEqual([...Object.keys(fn('activeProxies')(p, []))].sort(), ['aer', 'thr', 'vo2']);
   const after = L.activeProxies(p, [{ date: AS_OF, age: 44, sex: 'M', bw: 84, fiveKS: 1500 }]);
-  assert.deepEqual([...Object.keys(after)].sort(), ['z5', 'z7']);
-  assert.equal(fn('weakestProxy')({ z5: { pct: 70 }, z6: { pct: 40 }, z7: { pct: 55 } }), 'z6');
-  assert.deepEqual([...fn('mustTestOrder')('z5')], ['z4', 'z3', 'z2', 'z1']);
-  assert.deepEqual([...L.mustTestOrder(null)], ['z1', 'z2', 'z3', 'z4']);
+  assert.deepEqual([...Object.keys(after)].sort(), ['aer', 'vo2']);
+  assert.equal(fn('weakestProxy')({ vo2: { pct: 70 }, thr: { pct: 40 }, aer: { pct: 55 } }), 'thr');
+  assert.deepEqual([...fn('mustTestOrder')('vo2')], ['ana', 'sprint', 'power', 'hike']);
+  assert.deepEqual([...L.mustTestOrder('aer')], ['hike', 'ana', 'sprint', 'power']);
+  assert.deepEqual([...L.mustTestOrder(null)], ['power', 'sprint', 'ana', 'hike']);
 });
 test('proxies never feed block targets', () => {
   const a = { date: AS_OF, age: 44, sex: 'M', bw: 84, level: 'intermediate', fiveKS: 1500, flags: {}, sls: {} };

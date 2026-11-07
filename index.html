@@ -107,17 +107,22 @@ function mean(xs) { xs = xs.filter(function (x) { return x !== null && x !== und
 
 /* ---------- zones ---------- */
 var ZONES = [
-  { id: 'z1', n: 1, name: 'Explosive power', short: 'Power', test: 'Standing broad jump', tier: 'emerging', basis: 'own baseline' },
-  { id: 'z2', n: 2, name: 'Absolute strength (+ grip)', short: 'Strength', test: '5-rep trap-bar deadlift / squat · dead hang · grip', tier: 'moderate', basis: 'lifter bands + grip norms' },
-  { id: 'z3', n: 3, name: 'Anaerobic capacity', short: 'Anaerobic', test: '400 m run or 500 m row, all-out', tier: 'none', basis: 'own baseline' },
-  { id: 'z4', n: 4, name: 'Muscular endurance', short: 'Musc. end.', test: 'Push-ups to failure', tier: 'weak', basis: 'Cooper Institute percentile' },
-  { id: 'z5', n: 5, name: 'VO2max', short: 'VO2max', test: '2K row or 12-min run', tier: 'strongest', basis: 'FRIEND percentile' },
-  { id: 'z6', n: 6, name: 'Lactate threshold', short: 'Threshold', test: '5K time trial', tier: 'none', basis: 'own baseline' },
-  { id: 'z7', n: 7, name: 'Cardiovascular endurance', short: 'Endurance', test: 'Weekly zone-2 minutes', tier: 'lever', basis: 'own baseline' }
+  { id: 'power', n: 1, name: 'Explosive power (~1 s)', short: 'Power', test: 'Standing broad jump', tier: 'emerging', basis: 'own baseline' },
+  { id: 'sprint', n: 2, name: 'Max speed (10 s)', short: 'Sprint', test: '60 m from a standing start', tier: 'emerging', basis: 'age-graded %, not a percentile' },
+  { id: 'ana', n: 3, name: 'Anaerobic (60 s)', short: '60 s', test: '400 m run or 500 m row, all-out', tier: 'weak', basis: 'own baseline' },
+  { id: 'vo2', n: 4, name: 'VO2max (2–5 min)', short: 'VO2max', test: '2K row or 12-min run', tier: 'strongest', basis: 'FRIEND percentile' },
+  { id: 'thr', n: 5, name: 'Threshold (10–20 min)', short: 'Threshold', test: '5K time trial', tier: 'moderate', basis: 'own baseline' },
+  { id: 'aer', n: 6, name: 'Aerobic (60 min)', short: '60 min', test: '10K or half-marathon, or distance in a hard 60-min run', tier: 'moderate', basis: 'age-graded %, not a percentile' },
+  { id: 'hike', n: 7, name: 'Multi-hour endurance', short: 'Hike', test: 'Hard hike or ruck of 2 h or more', tier: 'none', basis: 'observed effort, no published norms' }
 ];
+/* the Strength pillar sits beside the curve: est. 1RM, grip + dead hang, push-ups */
+var PILLAR = { id: 'pillar', name: 'Strength pillar', short: 'Strength', test: '5-rep trap-bar deadlift / squat · grip · dead hang · push-ups', tier: 'strong', basis: 'lifter bands, grip norms, Cooper percentile' };
+function zoneName(id) { if (id === PILLAR.id) return PILLAR.name; var z = ZONES.filter(function (x) { return x.id === id; })[0]; return z ? z.name : id; }
+function zoneShort(id) { if (id === PILLAR.id) return PILLAR.short; if (id === 'behaviour') return 'Habit'; var z = ZONES.filter(function (x) { return x.id === id; })[0]; return z ? z.short : id; }
 var TIER_LABEL = { strongest: 'Evidence: strongest', strong: 'Evidence: strong', moderate: 'Evidence: moderate', emerging: 'Evidence: emerging', weak: 'Evidence: weak', none: 'Evidence: none separate', lever: 'Lever (no separate evidence)' };
-/* composite weights: zone 5 x3, zone 2 strength x2, zone 2b grip x2, others x1 */
-var WEIGHTS = { z1: 1, z2s: 2, z2g: 2, z3: 1, z4: 1, z5: 3, z6: 1, z7: 1 };
+/* composite weights (SPEC v2.1 (c)): VO2max x3, Strength pillar x2, other scored zones x1, hike x0 (observed only) */
+var WEIGHTS = { power: 1, sprint: 1, ana: 1, vo2: 3, thr: 1, aer: 1, hike: 0, pillar: 2 };
+var SCHEMA_VERSION = 2;
 
 /* ---------- norms ---------- */
 /* FRIEND registry treadmill VO2max (Kaminsky 2015, Mayo Clin Proc), rows = 20-29..70-79, cols = P10,P25,P50,P75,P90,P95 */
@@ -213,7 +218,11 @@ var METRICS = {
   pushups:  { label: 'Push-ups', unit: 'reps', better: 1, abs: 1 },
   vo2:      { label: 'Est. VO2max', unit: 'mL/kg/min', better: 1, abs: 1.5 },
   fiveK:    { label: '5K', unit: 's', better: -1, rel: 0.02 },
-  z2min:    { label: 'Zone-2 minutes', unit: 'min/wk', better: 1, rel: 0.10, absMin: 15 }
+  z2min:    { label: 'Zone-2 minutes', unit: 'min/wk', better: 1, rel: 0.10, absMin: 15 },
+  sprint:   { label: '60 m sprint (hand-timed)', unit: 's', better: -1, rel: 0.05 },
+  sprintVideo: { label: '60 m sprint (video-timed)', unit: 's', better: -1, rel: 0.03 },
+  aer:      { label: '60-min aerobic', unit: 's', better: -1, rel: 0.02 },
+  hike:     { label: 'Hike (Naismith ratio)', unit: '', better: 1, rel: 0.10 }
 };
 function mdc(metric, ref) { var m = METRICS[metric]; if (m.abs) return m.abs; return Math.max(m.absMin || 0, Math.abs(ref) * m.rel); }
 function classifyChange(metric, prev, cur) {
@@ -233,9 +242,20 @@ function metricValues(a) {
     pushups: { v: num(a.pushups), key: 'pushups' },
     vo2: { v: vo2Of(a), key: a.vo2Mode || 'row2k' },
     fiveK: { v: num(a.fiveKS), key: 'fiveK' },
-    z2min: { v: num(a.z2Min), key: 'z2min' }
+    z2min: { v: num(a.z2Min), key: 'z2min' },
+    sprint: { v: num(a.sprintS), key: a.sprintTiming === 'video' ? 'video' : 'hand', metric: a.sprintTiming === 'video' ? 'sprintVideo' : 'sprint' },
+    aer: { v: aerOf(a) ? aerOf(a).seconds : null, key: a.aerMode || '10k' },
+    hike: { v: hikeOf(a).ok ? hikeOf(a).ratio : null, key: 'hike' }
   };
 }
+
+/* 60-minute zone input: a 10K or half time, or a 60-min distance converted to a 10K time (tagged converted) */
+function aerOf(a) {
+  if (a.aerMode === '60min') { var c = tenKFromHour(num(a.aerM)); return c ? { seconds: c.seconds, event: '10km', converted: true } : null; }
+  var s = num(a.aerS); if (!s) return null;
+  return { seconds: s, event: a.aerMode === 'half' ? 'half' : '10km', converted: false };
+}
+function hikeOf(a) { return hikeRatio(a.hike || null, num(a.bw)); }
 
 /* own-baseline score: first test = 50, +10 per confirmed improvement beyond MDC, -10 per confirmed decline */
 function baselineScore(history, metric) {
@@ -244,7 +264,7 @@ function baselineScore(history, metric) {
     var mv = metricValues(a)[metric]; if (mv.v === null) return;
     if (score === null) { score = 50; ref = mv.v; refKey = mv.key; status = 'baseline'; return; }
     if (mv.key !== refKey) { ref = mv.v; refKey = mv.key; status = 'new test variant — new baseline'; return; }
-    var c = classifyChange(metric, ref, mv.v);
+    var c = classifyChange(mv.metric || metric, ref, mv.v);
     if (c === 'improved') { score += 10; ref = mv.v; status = 'improved'; }
     else if (c === 'declined') { score -= 10; ref = mv.v; status = 'declined'; }
     else status = 'within noise';
@@ -252,7 +272,39 @@ function baselineScore(history, metric) {
   return score === null ? null : { score: clamp(score, 1, 99), ref: ref, status: status };
 }
 
-/* ---------- scoring ---------- */
+/* ---------- scoring (v2.1 forever-athlete curve; SPEC v2.1) ---------- */
+/* Strength pillar = mean of the parts present: est. 1RM band, grip + dead hang, push-up percentile */
+function pillarScore(a) {
+  var st = strengthScore(a), gs = gripScore(a), pp = num(a.pushups) !== null ? pushupPercentile(num(a.pushups), a.sex) : null;
+  var parts = [st && st.score, gs, pp].filter(function (x) { return x !== null && x !== undefined; });
+  var detail = [st ? 'est. 1RM ' + Math.round(st.e1rm) + ' kg = ' + st.rel.toFixed(2) + '× BW · ' + st.band + ' (lifter-community band)' : null,
+    num(a.gripKg) ? 'grip ' + a.gripKg + ' kg ' + gripBand(a.gripKg, a.sex) : null,
+    num(a.hangS) ? 'hang ' + a.hangS + ' s of ' + Math.round(hangTarget(a.age, a.sex)) + ' s target' : null,
+    pp !== null ? a.pushups + ' push-ups · P' + Math.round(pp) + (outsideCheckedNormAges(a.age) ? ' (40–49 norms)' : '') : null].filter(Boolean);
+  return { score: parts.length ? mean(parts) : null, strength: st, grip: gs, pushups: pp, detail: detail.length ? detail.join(' · ') : null };
+}
+function ageGradeText(g) { return g && g.ok ? 'age-graded ' + g.pct.toFixed(1) + '%' : null; }
+function ageGradeScore(g) { return g && g.ok ? clamp(g.pct, 1, 99) : null; }
+
+function scoreSprint(a, change) {
+  var s = num(a.sprintS), g = s ? ageGrade('60m', a.sex, a.age, s) : null;
+  return { score: ageGradeScore(g), ageGrade: g, label: AGE_GRADE_LABEL,
+    detail: s ? fmtSec(s) + ' s 60 m (' + (a.sprintTiming === 'video' ? 'video-timed' : 'hand-timed, ±0.2 s') + ')' + (g && g.ok ? ' · ' + ageGradeText(g) : g ? ' · ' + g.reason : '') : null,
+    changes: [['sprint', change('sprint')]], tie: 1 };
+}
+function scoreAer(a, change) {
+  var x = aerOf(a), g = x ? ageGrade(x.event, a.sex, a.age, x.seconds) : null;
+  var what = !x ? null : a.aerMode === '60min' ? num(a.aerM) + ' m in 60 min → 10K ' + fmtTime(x.seconds) + ' (converted)' : fmtTime(x.seconds) + (x.event === 'half' ? ' half marathon' : ' 10K');
+  return { score: ageGradeScore(g), ageGrade: g, converted: !!(x && x.converted), label: AGE_GRADE_LABEL,
+    detail: what ? what + (g && g.ok ? ' · ' + ageGradeText(g) : g ? ' · ' + g.reason : '') : null, changes: [['aer', change('aer')]], tie: 1 };
+}
+function scoreHike(history, a, change) {
+  var h = hikeOf(a), b = baselineScore(history, 'hike');
+  return { score: b && b.score, observed: true, label: HIKE_LABEL, ratio: h.ok ? h.ratio : null,
+    detail: h.ok ? 'Naismith ratio ' + h.ratio.toFixed(2) + ' · ' + h.band : a.hike ? h.reason : null, changes: [['hike', change('hike')]], tie: 1 };
+}
+function fmtSec(s) { return (Math.round(s * 100) / 100).toFixed(2); }
+
 function scoreHistory(history) {
   /* history: assessments sorted ascending by date; scores the LAST one with the full history for own-baseline zones */
   if (!history.length) return null;
@@ -261,43 +313,38 @@ function scoreHistory(history) {
   function change(metric) {
     if (!pv || pv[metric].v === null || mv[metric].v === null) return null;
     if (pv[metric].key !== mv[metric].key) return 'different test';
-    return classifyChange(metric, pv[metric].v, mv[metric].v);
+    return classifyChange(mv[metric].metric || metric, pv[metric].v, mv[metric].v);
   }
-  var out = {}, entries = [];
+  var out = {};
   var b1 = baselineScore(history, 'jump');
-  out.z1 = { score: b1 && b1.score, detail: mv.jump.v !== null ? mv.jump.v + ' cm (reference ' + BROAD_JUMP_REF[a.sex] + ' cm, not age-adjusted)' : null,
+  out.power = { score: b1 && b1.score, detail: mv.jump.v !== null ? mv.jump.v + ' cm (reference ' + BROAD_JUMP_REF[a.sex] + ' cm, not age-adjusted)' : null,
              changes: [['jump', change('jump')]], tie: mv.jump.v ? mv.jump.v / BROAD_JUMP_REF[a.sex] : 1 };
-  var st = strengthScore(a), gs = gripScore(a);
-  var z2parts = [st && st.score, gs].filter(function (x) { return x !== null && x !== undefined; });
-  out.z2 = { score: z2parts.length ? mean(z2parts) : null, strength: st, grip: gs,
-             detail: (st ? 'est. 1RM ' + Math.round(st.e1rm) + ' kg = ' + st.rel.toFixed(2) + '× BW · ' + st.band + ' (lifter-community band)' : 'no lift entered') +
-                     (num(a.gripKg) ? ' · grip ' + a.gripKg + ' kg ' + gripBand(a.gripKg, a.sex) : '') +
-                     (num(a.hangS) ? ' · hang ' + a.hangS + ' s of ' + Math.round(hangTarget(a.age, a.sex)) + ' s target' : ''),
-             changes: [['e1rm', change('e1rm')], ['grip', change('grip')], ['hang', change('hang')]], tie: 1 };
-  var b3 = baselineScore(history, 'ana');
-  out.z3 = { score: b3 && b3.score, detail: mv.ana.v ? fmtTime(mv.ana.v) + (a.anaMode === 'row500' ? ' (500 m row)' : ' (400 m run)') : null, changes: [['ana', change('ana')]], tie: 1 };
-  var pp = mv.pushups.v !== null ? pushupPercentile(mv.pushups.v, a.sex) : null;
-  out.z4 = { score: pp, pct: pp, detail: mv.pushups.v !== null ? mv.pushups.v + ' reps · P' + Math.round(pp) + ' · ' + percentileLabel(pp) + (outsideCheckedNormAges(a.age) ? ' (40–49 norms; none published for your age here)' : '') : null,
-             changes: [['pushups', change('pushups')]], tie: 1 };
+  out.sprint = scoreSprint(a, change);
+  var b3 = baselineScore(history, 'ana'), g3 = mv.ana.v && a.anaMode !== 'row500' ? ageGrade('400m', a.sex, a.age, mv.ana.v) : null;
+  out.ana = { score: b3 && b3.score, secondary: ageGradeText(g3), ageGrade: g3,
+    detail: mv.ana.v ? fmtTime(mv.ana.v) + (a.anaMode === 'row500' ? ' (500 m row)' : ' (400 m run)') : null, changes: [['ana', change('ana')]], tie: 1 };
   var vp = mv.vo2.v !== null ? vo2Percentile(mv.vo2.v, a.age, a.sex) : null;
-  out.z5 = { score: vp, pct: vp, vo2: mv.vo2.v,
-             detail: mv.vo2.v !== null ? 'est. ' + mv.vo2.v.toFixed(1) + ' mL/kg/min · P' + Math.round(vp) + ' · ' + percentileLabel(vp) + (outsideCheckedNormAges(a.age) ? ' (estimated: only the median is checked against the source for your age)' : '') : null,
-             changes: [['vo2', change('vo2')]], tie: 1 };
-  var b6 = baselineScore(history, 'fiveK');
-  out.z6 = { score: b6 && b6.score, detail: mv.fiveK.v ? fmtTime(mv.fiveK.v) + ' 5K' : null, changes: [['fiveK', change('fiveK')]], tie: 1 };
-  var b7 = baselineScore(history, 'z2min');
-  out.z7 = { score: b7 && b7.score, detail: mv.z2min.v !== null ? mv.z2min.v + ' min/week zone 2 (aim 150–200+)' : null, changes: [['z2min', change('z2min')]],
-             tie: mv.z2min.v !== null ? Math.min(1.5, mv.z2min.v / 150) : 1 };
+  out.vo2 = { score: vp, pct: vp, vo2: mv.vo2.v,
+    detail: mv.vo2.v !== null ? 'est. ' + mv.vo2.v.toFixed(1) + ' mL/kg/min · P' + Math.round(vp) + ' · ' + percentileLabel(vp) + (outsideCheckedNormAges(a.age) ? ' (estimated: only the median is checked against the source for your age)' : '') : null,
+    changes: [['vo2', change('vo2')]], tie: 1 };
+  var b5 = baselineScore(history, 'fiveK'), g5 = mv.fiveK.v ? ageGrade('5km', a.sex, a.age, mv.fiveK.v) : null;
+  out.thr = { score: b5 && b5.score, secondary: ageGradeText(g5), ageGrade: g5, detail: mv.fiveK.v ? fmtTime(mv.fiveK.v) + ' 5K' : null, changes: [['fiveK', change('fiveK')]], tie: 1 };
+  out.aer = scoreAer(a, change);
+  out.hike = scoreHike(history, a, change);
+  var pillar = pillarScore(a);
+  pillar.changes = [['e1rm', change('e1rm')], ['grip', change('grip')], ['hang', change('hang')], ['pushups', change('pushups')]];
   var w = 0, s = 0;
-  function add(key, v) { if (v !== null && v !== undefined) { w += WEIGHTS[key]; s += WEIGHTS[key] * v; } }
-  add('z1', out.z1.score); add('z2s', st && st.score); add('z2g', gs); add('z3', out.z3.score);
-  add('z4', out.z4.score); add('z5', out.z5.score); add('z6', out.z6.score); add('z7', out.z7.score);
-  var ranked = ZONES.filter(function (z) { return out[z.id].score !== null && out[z.id].score !== undefined; })
-    .sort(function (x, y) { return (out[x.id].score - out[y.id].score) || (out[x.id].tie - out[y.id].tie) || (x.n - y.n); });
+  function add(key, v) { if (v !== null && v !== undefined && WEIGHTS[key] > 0) { w += WEIGHTS[key]; s += WEIGHTS[key] * v; } }
+  ZONES.forEach(function (z) { add(z.id, out[z.id].score); });
+  add('pillar', pillar.score);
+  /* weakest: scored zones with weight > 0 plus the pillar (the hike never ranks: observed only) */
+  var cand = ZONES.filter(function (z) { return WEIGHTS[z.id] > 0 && out[z.id].score !== null && out[z.id].score !== undefined; })
+    .map(function (z) { return { id: z.id, score: out[z.id].score, tie: out[z.id].tie, n: z.n }; });
+  if (pillar.score !== null) cand.push({ id: 'pillar', score: pillar.score, tie: 1, n: 8 });
+  cand.sort(function (x, y) { return (x.score - y.score) || (x.tie - y.tie) || (x.n - y.n); });
   var flagsDiffer = prev ? JSON.stringify(prev.flags || {}) !== JSON.stringify(a.flags || {}) : false;
-  return { assessment: a, zones: out, composite: w ? s / w : null, weakest: ranked.slice(0, 2).map(function (z) { return z.id; }), flagsDiffer: flagsDiffer };
+  return { assessment: a, zones: out, pillar: pillar, composite: w ? s / w : null, weakest: cand.slice(0, 2).map(function (z) { return z.id; }), flagsDiffer: flagsDiffer };
 }
-
 /* ---------- detraining (applied to stored baselines; never resets them) ---------- */
 function vo2DetrainLoss(days) {
   if (days <= 0) return 0;
@@ -333,19 +380,19 @@ function blockTargets(history, weeks, layoff) {
   var id = function (v) { return String(v); };
   if (num(a.jumpCm)) {
     var jb = Math.min(blocks, 3);   /* 1-2% per 4 wk for 8-12 wk, then flat */
-    push('z1', 'jump', a.jumpCm, round(a.jumpCm * (1 + 0.015 * jb)), id, 'cm', { why: 'power +1–2%/4 wk' });
+    push('power', 'jump', a.jumpCm, round(a.jumpCm * (1 + 0.015 * jb)), id, 'cm', { why: 'power +1–2%/4 wk' });
   }
   var e = eff.e1rm;
   if (e) {
     var rate = STRENGTH_RATE[a.level || 'intermediate'];
-    push('z2', 'e1rm', round(e), round(e * (1 + rate * blocks)), id, 'kg est. 1RM', { why: (a.level || 'intermediate') + ' ' + (rate * 100).toFixed(1) + '%/4 wk' });
-    T.push({ zone: 'z2', metric: 'repPR', label: 'Rep-PR at ' + a.liftKg + ' kg', current: a.liftReps, target: a.liftReps + Math.round(blocks), fmt: id, unit: 'reps',
+    push('pillar', 'e1rm', round(e), round(e * (1 + rate * blocks)), id, 'kg est. 1RM', { why: (a.level || 'intermediate') + ' ' + (rate * 100).toFixed(1) + '%/4 wk' });
+    T.push({ zone: 'pillar', metric: 'repPR', label: 'Rep-PR at ' + a.liftKg + ' kg', current: a.liftReps, target: a.liftReps + Math.round(blocks), fmt: id, unit: 'reps',
       expected: Math.round(blocks), mdc: 1, shown: true, why: 'rep PRs are exact: +1 rep per 4-week block' });
   }
-  if (num(a.gripKg)) push('z2', 'grip', a.gripKg, round(a.gripKg * (1 + 0.005 * blocks)), id, 'kg', { why: 'grip 0–1%/4 wk' });
-  if (num(a.hangS)) push('z2', 'hang', a.hangS, round(a.hangS * (1 + 0.03 * blocks)), id, 's', { why: 'own-baseline seconds, +5–10%/block' });
-  if (num(a.anaS)) push('z3', 'ana', a.anaS, round(a.anaS * (1 - 0.0075 * blocks)), fmtTime, a.anaMode === 'row500' ? '500 m row' : '400 m run', { why: 'sprint ~1–2% per 8 wk' });
-  if (num(a.pushups) !== null) T.push({ zone: 'z4', metric: 'pushups', label: 'Push-ups', current: a.pushups, target: a.pushups + 2 * Math.round(blocks), fmt: id, unit: 'reps',
+  if (num(a.gripKg)) push('pillar', 'grip', a.gripKg, round(a.gripKg * (1 + 0.005 * blocks)), id, 'kg', { why: 'grip 0–1%/4 wk' });
+  if (num(a.hangS)) push('pillar', 'hang', a.hangS, round(a.hangS * (1 + 0.03 * blocks)), id, 's', { why: 'own-baseline seconds, +5–10%/block' });
+  if (num(a.anaS)) push('ana', 'ana', a.anaS, round(a.anaS * (1 - 0.0075 * blocks)), fmtTime, a.anaMode === 'row500' ? '500 m row' : '400 m run', { why: 'sprint ~1–2% per 8 wk' });
+  if (num(a.pushups) !== null) T.push({ zone: 'pillar', metric: 'pushups', label: 'Push-ups', current: a.pushups, target: a.pushups + 2 * Math.round(blocks), fmt: id, unit: 'reps',
       expected: 2 * Math.round(blocks), mdc: 1, shown: true, why: 'rep-PR ladder: +2 per block' });
   var v = eff.vo2;
   if (v) {
@@ -356,33 +403,45 @@ function blockTargets(history, weeks, layoff) {
     if (a.vo2Mode === 'cooper12') { cur = round(cooperFromVo2(v)); tgt = round(cooperFromVo2(vt)); fmt = id; unit = 'm in 12 min'; }
     else { cur = round(row2kFromVo2(v, a.bw, a.sex)); tgt = round(row2kFromVo2(vt, a.bw, a.sex)); fmt = fmtTime; unit = '2K row'; }
     var dv = vt - v;
-    T.push({ zone: 'z5', metric: 'vo2', label: 'VO2max test', current: cur, target: tgt, fmt: fmt, unit: unit, vo2: v, vo2Target: vt,
+    T.push({ zone: 'vo2', metric: 'vo2', label: 'VO2max test', current: cur, target: tgt, fmt: fmt, unit: unit, vo2: v, vo2Target: vt,
       expected: dv, mdc: 1.5, shown: dv >= 1.5,
       why: (pct > 90 ? 'above P90: ~0.5%/4 wk' : first ? 'first block 2–3%/4 wk' : '~1%/4 wk after the first block') + ' → +' + dv.toFixed(1) + ' mL/kg/min (noise ±1.5)' });
   }
-  if (num(a.fiveKS)) push('z6', 'fiveK', a.fiveKS, round(a.fiveKS * (1 - 0.01 * blocks)), fmtTime, '5K', { why: 'threshold ~1%/4 wk (thin data)' });
+  if (num(a.fiveKS)) push('thr', 'fiveK', a.fiveKS, round(a.fiveKS * (1 - 0.01 * blocks)), fmtTime, '5K', { why: 'threshold ~1%/4 wk (thin data)' });
   if (num(a.z2Min) !== null) {
     var zc = a.z2Min, zt = zc >= 200 ? zc : clamp(zc + 20 * blocks, 150, 200);
-    T.push({ zone: 'z7', metric: 'z2min', label: 'Zone-2 minutes / week', current: zc, target: Math.max(zt, zc), fmt: id, unit: 'min/wk',
+    T.push({ zone: 'behaviour', metric: 'z2min', label: 'Zone-2 minutes / week', current: zc, target: Math.max(zt, zc), fmt: id, unit: 'min/wk',
       expected: Math.max(zt, zc) - zc, mdc: mdc('z2min', zc || 1), shown: true, why: 'behaviour target: build to 150–200+ min/week' });
+  }
+  /* v2.1 zones (SPEC v2.1 (d)); noise gate unchanged: a number only when the expected change beats the test's MDC */
+  if (num(a.sprintS)) {
+    var sm = a.sprintTiming === 'video' ? 'sprintVideo' : 'sprint', sb = Math.min(blocks, 3);   /* ~1%/4 wk for 8-12 wk, then flat */
+    push('sprint', sm, a.sprintS, Math.round(a.sprintS * (1 - 0.01 * sb) * 100) / 100, fmtSec, 's 60 m', { why: 'speed ~1%/4 wk for 8–12 wk; ' + (sm === 'sprintVideo' ? 'video' : 'hand') + ' timing noise ±' + Math.round(METRICS[sm].rel * 100) + '%' });
+  }
+  var ax = aerOf(a);
+  if (ax) push('aer', 'aer', round(ax.seconds), round(ax.seconds * (1 - 0.01 * blocks)), fmtTime, ax.event === 'half' ? 'half marathon' : '10K' + (ax.converted ? ' (converted)' : ''), { why: 'aerobic ~1%/4 wk' });
+  var hk = hikeOf(a);
+  if (hk.ok) {
+    var hm = Math.round(a.hike.movingS / 60), ht = Math.min(HIKE_MAX_MIN, Math.max(hm, HIKE_START_MIN) + 15 * blocks);
+    T.push({ zone: 'hike', metric: 'hikeMinutes', label: 'Long hike or ruck', current: hm, target: Math.max(ht, hm), fmt: id, unit: 'min', expected: Math.max(ht, hm) - hm, mdc: 0, shown: true,
+      why: 'habit target: one long hike every 2–4 weeks, +15 min per block up to 4 h, pack ≤ 10% bodyweight. Performance is observed only (trend, noise ±10%)' });
   }
   return { weeks: weeks, blocks: blocks, detraining: eff, items: T };
 }
 
 /* projected zone scores if every SHOWN block target is met (the dotted target curve) */
 function targetCurve(scored, targets) {
+  /* projected zone scores if every SHOWN block target is met (the dotted target curve); the hike stays where it is (observed only) */
   var a = scored.assessment, z = scored.zones, out = {};
   function t(metric) { var x = targets.items.filter(function (i) { return i.metric === metric && i.shown; }); return x.length ? x[0] : null; }
-  function bump(id, metric) { return z[id].score === null || z[id].score === undefined ? null : clamp(z[id].score + (t(metric) && t(metric).expected > 0 ? 10 : 0), 1, 99); }
-  out.z1 = bump('z1', 'jump'); out.z3 = bump('z3', 'ana'); out.z6 = bump('z6', 'fiveK'); out.z7 = bump('z7', 'z2min');
-  var pu = t('pushups'); out.z4 = z.z4.score === null ? null : pu ? pushupPercentile(pu.target, a.sex) : z.z4.score;
-  var vt = t('vo2'); out.z5 = z.z5.score === null ? null : vt ? vo2Percentile(vt.vo2Target, a.age, a.sex) : z.z5.score;
-  var st = z.z2.strength, et = t('e1rm'), ht = t('hang');
-  var ss = st ? (et ? bandPosition(et.target / a.bw, LIFT_BANDS[a.lift || 'trapbar'][a.sex]).score : st.score) : null;
-  var gparts = [];
-  if (num(a.gripKg)) gparts.push(gripKgScore(a.gripKg, a.sex));
-  if (num(a.hangS)) gparts.push(hangScore(ht ? ht.target : a.hangS, a.age, a.sex));
-  out.z2 = mean([ss, gparts.length ? mean(gparts) : null]);
+  function has(id) { return z[id].score !== null && z[id].score !== undefined; }
+  function bump(id, metric) { return has(id) ? clamp(z[id].score + (t(metric) && t(metric).expected > 0 ? 10 : 0), 1, 99) : null; }
+  function graded(id, metric, event) { var x = t(metric); if (!has(id)) return null; if (!x) return z[id].score; var g = ageGrade(event, a.sex, a.age, x.target); return g && g.ok ? clamp(g.pct, 1, 99) : z[id].score; }
+  out.power = bump('power', 'jump'); out.ana = bump('ana', 'ana'); out.thr = bump('thr', 'fiveK');
+  out.sprint = graded('sprint', a.sprintTiming === 'video' ? 'sprintVideo' : 'sprint', '60m');
+  var ax = aerOf(a); out.aer = ax ? graded('aer', 'aer', ax.event) : null;
+  var vt = t('vo2'); out.vo2 = !has('vo2') ? null : vt ? vo2Percentile(vt.vo2Target, a.age, a.sex) : z.vo2.score;
+  out.hike = has('hike') ? z.hike.score : null;
   return out;
 }
 
@@ -391,8 +450,8 @@ function targetCurve(scored, targets) {
 var BASE_WEEK = [['strengthA'], ['z2'], ['vo2'], ['strengthB'], ['power'], ['z2long'], []];
 /* +1 session for each of the two weakest zones; candidate days in preference order */
 var EXTRA = {
-  z1: { s: 'powerB', days: [6, 0] }, z2: { s: 'strengthC', days: [6, 1] }, z3: { s: 'anaerobic', days: [6, 4] },
-  z4: { s: 'muscEnd', days: [6, 3] }, z5: { s: 'vo2B', days: [6, 3] }, z6: { s: 'lt', days: [6, 1] }, z7: { s: 'z2extra', days: [6, 3] }
+  power: { s: 'powerB', days: [6, 0] }, sprint: { s: 'sprintB', days: [6, 0] }, ana: { s: 'anaerobic', days: [6, 4] },
+  vo2: { s: 'vo2B', days: [6, 3] }, thr: { s: 'lt', days: [6, 1] }, aer: { s: 'aerB', days: [6, 3] }, pillar: { s: 'strengthC', days: [6, 1] }
 };
 var SESSION_META = {
   strengthA: { type: 'strength', title: 'Strength A — heavy pull + push-up finisher' },
@@ -404,9 +463,12 @@ var SESSION_META = {
   power: { type: 'power', title: 'Power — jumps + sprints' }, powerB: { type: 'power', title: 'Power B — jumps (weak zone)' },
   anaerobic: { type: 'anaerobic', title: 'Anaerobic intervals (weak zone)' },
   lt: { type: 'lt', title: 'Threshold — 3 × 10 min (weak zone)' },
-  muscEnd: { type: 'muscEnd', title: 'Muscular endurance circuit (weak zone)' }
+  muscEnd: { type: 'muscEnd', title: 'Muscular endurance circuit (weak zone)' },
+  sprintB: { type: 'power', title: 'Sprint B — accelerations + flying 30 m (weak zone)' },
+  aerB: { type: 'lt', title: '60-min aerobic — steady-hard run (weak zone)' },
+  hike: { type: 'hike', title: 'Long hike or ruck (multi-hour zone)' }
 };
-var ENDURANCE_TYPES = { z2: 1, vo2: 1, lt: 1 }, FAST_TYPES = { power: 1, anaerobic: 1 };
+var ENDURANCE_TYPES = { z2: 1, vo2: 1, lt: 1, hike: 1 }, FAST_TYPES = { power: 1, anaerobic: 1 };
 
 function buildWeekTemplate(weakest) {
   var week = BASE_WEEK.map(function (d) { return d.slice(); }), usedExtraDay = {};
@@ -489,6 +551,18 @@ function sessionDose(id, ctx, wk) {
   } else if (id === 'lt') {
     var k = num(a.fiveKS) ? lerp(a.fiveKS, ctx.fiveKExpected, p) / 5 : null;
     d.push(vol(3) + ' × 10 min at threshold' + (k ? ' — ' + paceStr(k * 1.04, '') + '–' + paceStr(k * 1.08, ' /km') + ' (5K pace ' + paceStr(k, ' /km') + ' + 4–8%)' : '') + ', 2 min easy between');
+  } else if (id === 'sprintB') {
+    d.push('Accelerations: ' + vol(4) + ' × 20 m from a standing start, walk-back rest');
+    d.push('Flying 30 m: ' + vol(3) + ' × (20 m build-up + 30 m fast), ≥ 3 min rest' + (num(a.sprintS) ? ' — last 60 m test ' + fmtSec(a.sprintS) + ' s' : ''));
+    notes.push('Own day, or ≥ 3 h away from endurance work.');
+  } else if (id === 'aerB') {
+    var k10 = ctx.aerS ? lerp(ctx.aerS, ctx.aerS * (1 - 0.01 * ctx.blocks), p) / 10 : null;
+    d.push(Math.round((dl ? 0.6 : 1) * 60) + ' min steady-hard run' + (k10 ? ' at ' + paceStr(k10 * 1.08, '') + '–' + paceStr(k10 * 1.12, ' /km') + ' (10K pace ' + paceStr(k10, ' /km') + ' + 8–12%)' : ' at a pace you could hold for about an hour, minus a little'));
+  } else if (id === 'hike') {
+    var hmin = Math.round(lerp(ctx.hikeMin, ctx.hikeTarget, p) * (dl ? 0.6 : 1) / 5) * 5;
+    d.push('Long hike or ruck: ~' + hmin + ' min at a steady, talk-test effort, with hills if you have them');
+    d.push('Pack ≤ 10% of bodyweight (≤ ' + Math.round(a.bw * 0.1) + ' kg). Log distance, ascent, pack and moving time as a hike test if it was a hard effort.');
+    notes.push('Replaces the long zone-2 session this week.');
   } else if (id === 'muscEnd') {
     var mx = num(a.pushups) !== null ? Math.round(lerp(a.pushups, a.pushups + 2 * ctx.blocks, p)) : 15;
     d.push('Push-up ladder 1 → ' + Math.max(3, Math.round(mx * 0.4)) + ' → 1, rest as needed');
@@ -506,7 +580,8 @@ function programContext(history, targets, layoff) {
   var vt = targets.items.filter(function (i) { return i.metric === 'vo2'; })[0];
   var ctx = { a: a, blocks: targets.blocks, e1rm: eff.e1rm, e1rmExpected: exp('e1rm') || eff.e1rm, hangTarget: exp('hang') || num(a.hangS),
     anaExpected: exp('ana') || num(a.anaS), fiveKExpected: exp('fiveK') || num(a.fiveKS), vo2Mode: a.vo2Mode,
-    z2Min: num(a.z2Min) || 0, z2Target: exp('z2min') || 150 };
+    z2Min: num(a.z2Min) || 0, z2Target: exp('z2min') || 150,
+    aerS: aerOf(a) && aerOf(a).event === '10km' ? aerOf(a).seconds : null, hikeMin: (targets.items.filter(function (i) { return i.metric === 'hikeMinutes'; })[0] || {}).current || HIKE_START_MIN, hikeTarget: exp('hikeMinutes') || HIKE_START_MIN + 15 * targets.blocks };
   if (vt) {
     if (a.vo2Mode === 'cooper12') { ctx.cooperM = vt.current; ctx.cooperExpected = vt.target; }
     else { ctx.row2kS = vt.current; ctx.row2kExpected = vt.target; }
@@ -523,7 +598,8 @@ function generateProgram(history, weakest, startDate, layoff) {
     var wk = { index: w, block: block, inBlock: inBlock, deload: inBlock === 4, p: w / 11, z2Sessions: z2Sessions };
     var days = [];
     for (var d = 0; d < 7; d++) {
-      var date = addDays(startDate, w * 7 + d), sessions = tmpl[d].map(function (s) { return sessionDose(s, ctx, wk); });
+      var ids = tmpl[d].map(function (s) { return s === 'z2long' && inBlock === 2 ? 'hike' : s; });   /* long hike replaces the long zone-2 session in week 2 of each block */
+      var date = addDays(startDate, w * 7 + d), sessions = ids.map(function (s) { return sessionDose(s, ctx, wk); });
       var hasEnd = sessions.some(function (s) { return ENDURANCE_TYPES[s.type]; }), hasFast = sessions.some(function (s) { return FAST_TYPES[s.type]; });
       if (hasEnd && hasFast) sessions.forEach(function (s) { if (FAST_TYPES[s.type]) s.notes.push('Same day as endurance work: do this first and separate them by ≥ 3 h.'); });
       if (sessions.length > 1) sessions.slice(1).forEach(function (s) { s.notes.push('Second session today — AM/PM split.'); });
@@ -531,7 +607,7 @@ function generateProgram(history, weakest, startDate, layoff) {
     }
     weeks.push({ n: w + 1, block: block, inBlock: inBlock, deload: wk.deload, days: days });
   }
-  return { version: 1, createdAt: new Date().toISOString(), start: startDate, assessmentDate: history[history.length - 1].date,
+  return { version: 1, curveVersion: SCHEMA_VERSION, createdAt: new Date().toISOString(), start: startDate, assessmentDate: history[history.length - 1].date,
            weakest: weakest.slice(), template: tmpl, weeks: weeks };
 }
 function programDay(program, iso) {
@@ -559,7 +635,7 @@ function blockAdherence(program, log, iso) {
 var LB_KG = 0.45359237, PROXY_WINDOW_DAYS = 112, EFFORT_KEEP_DAYS = 364, EFFORT_KEEP_MAX = 400, BOM = String.fromCharCode(0xFEFF);
 var PROXY_BAND = { z6: 0.08, z7: 0.11, z7race: 0.05, z5: 0.20, e1rm: 0.10 };
 function proxyLabel(pct) { return 'Estimated from your log, ±' + Math.round(pct * 100) + '%, provisional until tested'; }
-var MUST_TEST = ['z1', 'z2', 'z3', 'z4'];
+var MUST_TEST = ['power', 'sprint', 'ana', 'hike'];
 var LIFT_MAP = {
   trapbar: { name: 'Trap-bar deadlift', alias: ['trap bar deadlift', 'trap-bar deadlift', 'hex bar deadlift', 'deadlift (trap bar)'] },
   deadlift: { name: 'Deadlift', alias: ['deadlift', 'deadlift (barbell)', 'conventional deadlift', 'barbell deadlift'] },
@@ -715,26 +791,26 @@ function proxyEstimates(strava, profile, asOf) {
   var cs = criticalSpeed(E);
   if (cs.ok) {
     var vd6 = vdot(5000, cs.fiveKS);
-    out.z6 = { zone: 'z6', ok: true, band: PROXY_BAND.z6, label: proxyLabel(PROXY_BAND.z6), cs: cs.cs, dPrime: cs.dPrime, fiveKS: cs.fiveKS, vdot: vd6,
+    out.thr = { zone: 'thr', ok: true, band: PROXY_BAND.z6, label: proxyLabel(PROXY_BAND.z6), cs: cs.cs, dPrime: cs.dPrime, fiveKS: cs.fiveKS, vdot: vd6,
       pct: pctOrNull(vd6, profile), n: cs.points.length,
       text: 'critical speed ' + fmtTime(1000 / cs.cs) + ' /km → 5K ≈ ' + fmtTime(cs.fiveKS) + ' (' + fmtTime(cs.fiveKS * (1 - PROXY_BAND.z6)) + '–' + fmtTime(cs.fiveKS * (1 + PROXY_BAND.z6)) + ') from ' + cs.points.length + ' best efforts' };
-  } else out.z6 = { zone: 'z6', ok: false, reason: cs.reason };
+  } else out.thr = { zone: 'thr', ok: false, reason: cs.reason };
   var long = E.filter(function (e) { return e.m >= 5000 && e.m <= 21300; }), races = long.filter(function (e) { return e.race; }), pool = races.length ? races : long;
   if (pool.length) {
     var b7 = pool.map(function (e) { return { e: e, d60: riegelDistance(e.s, e.m, 3600) }; }).sort(function (a, b) { return b.d60 - a.d60; })[0];
     var band7 = b7.e.race ? PROXY_BAND.z7race : PROXY_BAND.z7, vd7 = vdot(b7.d60, 3600);
-    out.z7 = { zone: 'z7', ok: true, band: band7, label: proxyLabel(band7), d60: b7.d60, source: b7.e, race: b7.e.race, vdot: vd7, pct: pctOrNull(vd7, profile),
+    out.aer = { zone: 'aer', ok: true, band: band7, label: proxyLabel(band7), d60: b7.d60, source: b7.e, race: b7.e.race, vdot: vd7, pct: pctOrNull(vd7, profile),
       text: '≈ ' + (b7.d60 / 1000).toFixed(1) + ' km in 60 min (' + (b7.d60 * (1 - band7) / 1000).toFixed(1) + '–' + (b7.d60 * (1 + band7) / 1000).toFixed(1) + ') from ' +
         (b7.e.m / 1000).toFixed(1) + ' km in ' + fmtTime(b7.e.s) + ' on ' + b7.e.date + (b7.e.race ? ' (race)' : '') };
-  } else out.z7 = { zone: 'z7', ok: false, reason: 'not enough data: need a run of 5 km to half marathon in the last 16 weeks' };
+  } else out.aer = { zone: 'aer', ok: false, reason: 'not enough data: need a run of 5 km to half marathon in the last 16 weeks' };
   var short = E.filter(function (e) { return e.m >= 1500 && e.m <= 5000; });
   if (short.length) {
     var b5 = short.map(function (e) { return { e: e, d12: riegelDistance(e.s, e.m, 720) }; }).sort(function (a, b) { return b.d12 - a.d12; })[0];
     var v5 = vo2FromCooper(b5.d12), lo = v5 * (1 - PROXY_BAND.z5), hi = v5 * (1 + PROXY_BAND.z5);
-    out.z5 = { zone: 'z5', ok: true, band: PROXY_BAND.z5, label: proxyLabel(PROXY_BAND.z5), vo2: v5, vo2Lo: lo, vo2Hi: hi, d12: b5.d12, source: b5.e,
+    out.vo2 = { zone: 'vo2', ok: true, band: PROXY_BAND.z5, label: proxyLabel(PROXY_BAND.z5), vo2: v5, vo2Lo: lo, vo2Hi: hi, d12: b5.d12, source: b5.e,
       pct: pctOrNull(v5, profile), pctLo: pctOrNull(lo, profile), pctHi: pctOrNull(hi, profile),
       text: 'VO2max ≈ ' + v5.toFixed(1) + ' mL/kg/min (' + lo.toFixed(1) + '–' + hi.toFixed(1) + ') from ' + (b5.e.m / 1000).toFixed(1) + ' km in ' + fmtTime(b5.e.s) + ' on ' + b5.e.date };
-  } else out.z5 = { zone: 'z5', ok: false, reason: 'not enough data: need a run of 1.5–5 km in the last 16 weeks' };
+  } else out.vo2 = { zone: 'vo2', ok: false, reason: 'not enough data: need a run of 1.5–5 km in the last 16 weeks' };
   return out;
 }
 
@@ -742,9 +818,9 @@ function proxyEstimates(strava, profile, asOf) {
 function realZones(history) {
   var r = {};
   (history || []).forEach(function (a) {
-    if (vo2Of(a) !== null) r.z5 = true;
-    if (num(a.fiveKS)) r.z6 = true;
-    if (num(a.z2Min) !== null) r.z7 = true;
+    if (vo2Of(a) !== null) r.vo2 = true;
+    if (num(a.fiveKS)) r.thr = true;
+    if (aerOf(a)) r.aer = true;
   });
   return r;
 }
@@ -760,10 +836,10 @@ function weakestProxy(active) {
   return z[0] || null;
 }
 function mustTestOrder(weakest) {
-  var n = weakest ? Number(weakest.slice(1)) : 0;
-  return MUST_TEST.slice().sort(function (a, b) { var da = Math.abs(Number(a.slice(1)) - n), db = Math.abs(Number(b.slice(1)) - n); return da - db || (a < b ? -1 : 1); });
+  function pos(id) { var z = ZONES.filter(function (x) { return x.id === id; })[0]; return z ? z.n : 0; }
+  var n = weakest ? pos(weakest) : 0;
+  return MUST_TEST.slice().sort(function (a, b) { return Math.abs(pos(a) - n) - Math.abs(pos(b) - n) || pos(a) - pos(b); });
 }
-
 /* Age-grade data (docs/SPEC.md v2.1 (b)). 60 m / 400 m: WMA 2023 Appendix B one-year factors; 5 km / 10 km / half: USATF MLDR 2025 road
    tables (Alan Jones, CC0). Rows = single ages 30..90. Open standards: road = table OC; track = senior world record (assumption, see SPEC). */
 var AGE_GRADE_MIN_AGE = 30, AGE_GRADE_MAX_AGE = 90;
@@ -825,6 +901,19 @@ function hikeRatio(h, bodyKg) {
 }
 /* EXPORT (add to root.LMX): AGE_GRADE_FACTORS, AGE_GRADE_OPEN, AGE_GRADE_LABEL, ageGrade, tenKFromHour, SPRINT_MDC, sprintMdc,
    HIKE_LABEL, HIKE_MDC, naismithSeconds, hikeRatio */
+/* ---------- v2.1 hike habit target + one-time migration (SPEC v2.1 (c)(d)) ---------- */
+var HIKE_START_MIN = 120, HIKE_MAX_MIN = 240;
+/* true when stored data predates the forever-athlete curve (schema absent or < 2) */
+function needsMigration(data) { return !data || !(Number(data.schema) >= SCHEMA_VERSION); }
+/* returns a migrated COPY: schema = 2, a program built on the old zone ids is kept but marked stale; assessments are never rewritten */
+function migrateState(data) {
+  var out = JSON.parse(JSON.stringify(data || {}));
+  if (!needsMigration(out)) return out;
+  out.schema = SCHEMA_VERSION;
+  if (out.program && out.program.curveVersion !== SCHEMA_VERSION) out.program.stale = true;
+  return out;
+}
+
 root.LMX = {
   ZONES: ZONES, TIER_LABEL: TIER_LABEL, METRICS: METRICS, FRIEND: FRIEND,
   parseTime: parseTime, fmtTime: fmtTime, addDays: addDays, daysBetween: daysBetween,
@@ -835,7 +924,9 @@ root.LMX = {
   blockTargets: blockTargets, targetCurve: targetCurve, buildWeekTemplate: buildWeekTemplate,
   generateProgram: generateProgram, programDay: programDay, blockAdherence: blockAdherence,
   PROXY_BAND: PROXY_BAND, proxyLabel: proxyLabel, LIFT_MAP: LIFT_MAP, MUST_TEST: MUST_TEST, mapLift: mapLift, parseCsv: parseCsv, parseNum: parseNum, parseDate: parseDate, parseStrong: parseStrong, parseStrava: parseStrava, riegelTime: riegelTime, riegelDistance: riegelDistance, vdot: vdot, bestEnvelope: bestEnvelope, criticalSpeed: criticalSpeed, proxyEstimates: proxyEstimates, realZones: realZones, activeProxies: activeProxies, weakestProxy: weakestProxy, mustTestOrder: mustTestOrder,
-  AGE_GRADE_FACTORS: AGE_GRADE_FACTORS, AGE_GRADE_OPEN: AGE_GRADE_OPEN, AGE_GRADE_LABEL: AGE_GRADE_LABEL, ageGrade: ageGrade, tenKFromHour: tenKFromHour, SPRINT_MDC: SPRINT_MDC, sprintMdc: sprintMdc, HIKE_LABEL: HIKE_LABEL, HIKE_MDC: HIKE_MDC, naismithSeconds: naismithSeconds, hikeRatio: hikeRatio
+  AGE_GRADE_FACTORS: AGE_GRADE_FACTORS, AGE_GRADE_OPEN: AGE_GRADE_OPEN, AGE_GRADE_LABEL: AGE_GRADE_LABEL, ageGrade: ageGrade, tenKFromHour: tenKFromHour, SPRINT_MDC: SPRINT_MDC, sprintMdc: sprintMdc, HIKE_LABEL: HIKE_LABEL, HIKE_MDC: HIKE_MDC, naismithSeconds: naismithSeconds, hikeRatio: hikeRatio,
+  PILLAR: PILLAR, WEIGHTS: WEIGHTS, SCHEMA_VERSION: SCHEMA_VERSION, zoneName: zoneName, zoneShort: zoneShort, aerOf: aerOf, hikeOf: hikeOf,
+  pillarScore: pillarScore, migrateState: migrateState, needsMigration: needsMigration
 };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
